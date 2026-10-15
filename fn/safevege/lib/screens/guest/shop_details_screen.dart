@@ -537,47 +537,52 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               ),
                             ],
                           ),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.successBgOf(context),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.eco_rounded,
-                                color: AppColors.success,
-                                size: 20,
-                              ),
-                            ),
-                            title: Text(
-                              veg,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            subtitle: const Text(
-                              'ผลผ่านและใบรับรองที่เผยแพร่ • แตะเพื่อดูประวัติผลตรวจ',
-                              style: TextStyle(fontSize: 11.5),
-                            ),
-                            trailing: const StatusBadge(status: 'ผ่าน'),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => InspectionHistoryScreen(
-                                    shop: shop,
-                                    results: shop.publicResults
-                                        .where(
-                                          (result) =>
-                                              result.vegetableName == veg,
-                                        )
-                                        .toList(growable: false),
-                                  ),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successBgOf(context),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                              );
-                            },
+                                child: const Icon(
+                                  Icons.eco_rounded,
+                                  color: AppColors.success,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                veg,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              subtitle: const Text(
+                                'ผลผ่านและใบรับรองที่เผยแพร่ • แตะเพื่อดูประวัติผลตรวจ',
+                                style: TextStyle(fontSize: 11.5),
+                              ),
+                              trailing: const StatusBadge(status: 'ผ่าน'),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => InspectionHistoryScreen(
+                                      shop: shop,
+                                      results: shop.publicResults
+                                          .where(
+                                            (result) =>
+                                                result.vegetableName == veg,
+                                          )
+                                          .toList(growable: false),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         );
                       }),
