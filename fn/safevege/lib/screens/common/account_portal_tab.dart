@@ -513,7 +513,6 @@ class AccountPortalTab extends StatelessWidget {
   /// Role Portals Group (ร้านค้า & ผู้ดูแลระบบ)
   Widget _buildRolePortalsGroup(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -1334,7 +1333,6 @@ class AccountPortalTab extends StatelessWidget {
     required IconData icon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

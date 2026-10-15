@@ -650,59 +650,163 @@ String _safeVegeEmoji(String name) {
   return '🌱';
 }
 
-String _safeVegeLocationText(ShopModel shop, String? distanceText) {
-  if (distanceText != null &&
-      distanceText != '—' &&
-      distanceText.trim().isNotEmpty) {
-    return distanceText;
+/// Curated high quality vegetable, farm, and organic market photos matching SafeVege demo
+String getShopImageUrl(ShopModel shop) {
+  final name = shop.name.toLowerCase();
+  if (name.contains('ริมกก')) {
+    return 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80'; // Fresh vegetable market stall
   }
-  if (shop.district.isNotEmpty) {
-    return 'อ.${shop.district}';
+  if (name.contains('บ้านดอย')) {
+    return 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80'; // Crisp green salad lettuce farm
   }
-  return 'เชียงราย';
+  if (name.contains('สุขใจ')) {
+    return 'https://images.unsplash.com/photo-1573246123716-6b1782bfc499?auto=format&fit=crop&w=600&q=80'; // Fresh greens, tomatoes and market produce
+  }
+  final fallbackImages = [
+    'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1573246123716-6b1782bfc499?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=600&q=80',
+  ];
+  return fallbackImages[shop.id.hashCode.abs() % fallbackImages.length];
 }
 
-class _CardActionButton extends StatelessWidget {
-  const _CardActionButton({
-    required this.icon,
-    required this.label,
-    required this.isDark,
-    required this.onPressed,
-  });
+Widget _buildFallbackImage(bool isDark) {
+  return Container(
+    decoration: BoxDecoration(
+      color: isDark ? const Color(0xFF1B3D2A) : const Color(0xFFE2EFE5),
+    ),
+    child: Center(
+      child: Icon(
+        Icons.eco_rounded,
+        color: isDark ? AppDarkColors.primary : const Color(0xFF10B981),
+        size: 28,
+      ),
+    ),
+  );
+}
 
-  final IconData icon;
-  final String label;
-  final bool isDark;
-  final VoidCallback onPressed;
+Widget _buildPillAction({
+  required String label,
+  required IconData icon,
+  required bool isDark,
+  required VoidCallback onTap,
+}) {
+  return PressableScale(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceElevated : const Color(0xFFF1F5F2),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE4),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12.5,
+            color: isDark ? AppDarkColors.textSecondary : const Color(0xFF475569),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppDarkColors.textPrimary : const Color(0xFF334155),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.tonalIcon(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: isDark
-            ? AppDarkColors.surfaceElevated
-            : const Color(0xFFF1F5F2),
-        foregroundColor: isDark
-            ? AppDarkColors.textPrimary
-            : const Color(0xFF1C2E22),
-        minimumSize: const Size(0, 36),
-        padding: const EdgeInsets.symmetric(horizontal: 11),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE4),
-            width: 0.6,
+List<Widget> _buildShopTagList(ShopModel shop, bool isDark, {int maxTags = 3}) {
+  final tags = <Widget>[
+    Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF143820) : const Color(0xFFDCFCE7),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        '🌱 ตรวจรับรองความปลอดภัย',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF15803D),
+        ),
+      ),
+    ),
+  ];
+
+  if (shop.verifiedVegetables.isNotEmpty) {
+    for (final veg in shop.verifiedVegetables.take(maxTags - 1)) {
+      tags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Text(
+            '${_safeVegeEmoji(veg)} $veg',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+            ),
+          ),
+        ),
+      );
+    }
+  } else {
+    tags.add(
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          'ผักหลากหลาย',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
           ),
         ),
       ),
-      icon: Icon(icon, size: 12),
-      label: Text(
-        label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      ),
     );
+    if (maxTags >= 3) {
+      tags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Text(
+            'ราคายุติธรรม',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+            ),
+          ),
+        ),
+      );
+    }
   }
+
+  return tags;
 }
 
 /// การ์ดร้านค้าสไตล์ Marketplace Feed สำหรับ SafeVege
@@ -741,502 +845,361 @@ class MarketplaceShopCard extends StatelessWidget {
         ? AppDarkColors.textSecondary
         : AppColors.textSecondaryOf(context);
 
-    final locationOrDistance = _safeVegeLocationText(shop, distanceText);
     final isRealDistance =
         distanceText != null &&
         distanceText != '—' &&
         distanceText!.trim().isNotEmpty;
+    final imageUrl = getShopImageUrl(shop);
+    final displayDistance = isRealDistance ? distanceText! : 'ใกล้ฉัน';
 
     return PressableScale(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: surfaceColor,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: isDark ? borderColor : const Color(0xFFE2EBE4),
-            width: 0.9,
-          ),
-          boxShadow: isDark
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.35),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: const Color(0x0A0F3820),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor, width: 0.9),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.35 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Lush botanical header banner with integrated info & badges
-            Container(
-              height: 76,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: isDark
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF132B1D),
-                          Color(0xFF1B3D2A),
-                          Color(0xFF153322),
-                        ],
-                      )
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF0C4D33),
-                          Color(0xFF156E47),
-                          Color(0xFF208A56),
-                        ],
-                      ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Stack(
+        padding: const EdgeInsets.all(12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 600;
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Positioned(
-                    right: -6,
-                    bottom: -18,
-                    child: FloatingElement(
-                      distance: 3.0,
-                      child: Icon(
-                        CupertinoIcons.leaf_arrow_circlepath,
-                        size: 80,
-                        color: Colors.white.withOpacity(isDark ? 0.07 : 0.12),
+                  // 1. Photo on left
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      width: 120,
+                      height: 96,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
                       ),
                     ),
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Farm / Shop Emblem squircle
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppDarkColors.surfaceElevated
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(
-                              isDark ? 0.2 : 0.85,
-                            ),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                isDark ? 0.35 : 0.1,
-                              ),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.eco_rounded,
-                            color: isDark
-                                ? AppDarkColors.primary
-                                : const Color(0xFF167B4C),
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Verified SafeVege trust pill
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(
-                                      isDark ? 0.14 : 0.22,
-                                    ),
-                                    borderRadius: BorderRadius.circular(100),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.35),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      PulseBadge(
-                                        minScale: 0.9,
-                                        maxScale: 1.15,
-                                        duration: const Duration(milliseconds: 2000),
-                                        child: const Icon(
-                                          CupertinoIcons.checkmark_seal_fill,
-                                          size: 11,
-                                          color: Color(0xFF86EFAC),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        shop.isVerified
-                                            ? 'ตรวจผ่านการรับรอง'
-                                            : 'รอการตรวจรับรอง',
-                                        style: const TextStyle(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          letterSpacing: 0.1,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                // Distance / Location indicator pill
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(
-                                        isDark ? 0.32 : 0.2,
-                                      ),
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          isRealDistance
-                                              ? CupertinoIcons.location_fill
-                                              : CupertinoIcons.placemark,
-                                          size: 10.5,
-                                          color: const Color(0xFFD1FAE5),
-                                        ),
-                                        const SizedBox(width: 3.5),
-                                        Flexible(
-                                          child: Text(
-                                            locationOrDistance,
-                                            style: const TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (onFavorite != null) ...[
-                        const SizedBox(width: 8),
-                        AnimatedFavoriteHeart(
-                          isFavorite: isFavorite,
-                          onToggle: onFavorite!,
-                          size: 19,
-                          backgroundColor: Colors.black.withOpacity(
-                            isDark ? 0.35 : 0.24,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                  const SizedBox(width: 14),
 
-            // Card Body Content
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Shop name
-                  Text(
-                    shop.name,
-                    style: TextStyle(
-                      fontSize: 17.5,
-                      fontWeight: FontWeight.w700,
-                      color: textPrimary,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  // Area and owner info
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: isDark
-                            ? AppDarkColors.secondary
-                            : const Color(0xFF267D4F),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          shop.ownerFullName.isNotEmpty
-                              ? '${shop.shortArea} • เจ้าของ: ${shop.ownerFullName}'
-                              : shop.shortArea,
+                  // 2. Middle column: Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          shop.name,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            color: textSecondary,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textPrimary,
+                            letterSpacing: -0.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 13,
+                              color: Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              shop.shortArea,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '|',
+                              style: TextStyle(fontSize: 11, color: borderColor),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              CupertinoIcons.location_fill,
+                              size: 11,
+                              color: Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              displayDistance,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: _buildShopTagList(shop, isDark),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
 
-                  const SizedBox(height: 10),
-
-                  // Certified vegetables tags or safety guarantee
-                  if (shop.verifiedVegetables.isNotEmpty) ...[
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        ...shop.verifiedVegetables.map((veg) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1B2E21)
-                                  : const Color(0xFFEBF6EE),
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(
-                                color: isDark
-                                    ? const Color(0xFF2D4D36)
-                                    : const Color(0xFFCFE8D5),
-                                width: 0.8,
+                  // 3. Right column: Buttons
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (onFavorite != null)
+                            IconButton(
+                              onPressed: onFavorite,
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                isFavorite
+                                    ? CupertinoIcons.heart_fill
+                                    : CupertinoIcons.heart,
+                                color: isFavorite
+                                    ? const Color(0xFFEF4444)
+                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                size: 20,
                               ),
                             ),
-                            child: Row(
+                          const SizedBox(width: 6),
+                          FilledButton(
+                            onPressed: onTap,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  _safeVegeEmoji(veg),
-                                  style: const TextStyle(fontSize: 11.5),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  veg,
+                                  'ดูร้านค้า',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? const Color(0xFF6EE7B7)
-                                        : const Color(0xFF0F5A3C),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        if (shop.publicResults.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 4.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF2E2413)
-                                  : const Color(0xFFFEF3C7),
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(
-                                color: isDark
-                                    ? const Color(0xFF523D18)
-                                    : const Color(0xFFFDE68A),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.verified_outlined,
-                                  size: 12,
-                                  color: Color(0xFFD97706),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'ตรวจผ่าน ${shop.publicResults.length} ชนิด',
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFFB45309),
                                   ),
                                 ),
+                                SizedBox(width: 3),
+                                Icon(CupertinoIcons.chevron_right, size: 12),
                               ],
                             ),
                           ),
-                      ],
-                    ),
-                  ] else ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
+                        ],
                       ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF1B2E21)
-                            : const Color(0xFFEBF6EE),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF2D4D36)
-                              : const Color(0xFFCFE8D5),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
+                      const SizedBox(height: 8),
+                      Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('🌱', style: TextStyle(fontSize: 12)),
-                          const SizedBox(width: 5),
-                          Text(
-                            'ผักปลอดภัยผ่านเกณฑ์มาตรฐาน สสจ.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? const Color(0xFF6EE7B7)
-                                  : const Color(0xFF0F5A3C),
+                          if (onCall != null)
+                            _buildPillAction(
+                              label: 'โทร',
+                              icon: Icons.phone_rounded,
+                              isDark: isDark,
+                              onTap: onCall!,
                             ),
+                          const SizedBox(width: 8),
+                          if (onRoute != null)
+                            _buildPillAction(
+                              label: 'นำทาง',
+                              icon: CupertinoIcons.arrow_turn_up_right,
+                              isDark: isDark,
+                              onTap: onRoute!,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+
+            // Compact / Mobile Layout (< 600px)
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Photo
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: SizedBox(
+                        width: 105,
+                        height: 90,
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Info Column
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  shop.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: textPrimary,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (onFavorite != null)
+                                GestureDetector(
+                                  onTap: onFavorite,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 6),
+                                    child: Icon(
+                                      isFavorite
+                                          ? CupertinoIcons.heart_fill
+                                          : CupertinoIcons.heart,
+                                      color: isFavorite
+                                          ? const Color(0xFFEF4444)
+                                          : (isDark ? Colors.white60 : const Color(0xFF94A3B8)),
+                                      size: 19,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 12,
+                                color: Color(0xFF10B981),
+                              ),
+                              const SizedBox(width: 2),
+                              Flexible(
+                                child: Text(
+                                  shop.shortArea,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text('|', style: TextStyle(fontSize: 10, color: borderColor)),
+                              const SizedBox(width: 4),
+                              Text(
+                                displayDistance,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 4,
+                            children: _buildShopTagList(shop, isDark, maxTags: 2),
                           ),
                         ],
                       ),
                     ),
                   ],
-
-                  const SizedBox(height: 14),
-                  Divider(
-                    height: 1,
-                    color: isDark
-                        ? AppDarkColors.borderLight
-                        : const Color(0xFFEDF2EE),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Actions row: Call, Directions, View Shop Details
-                  Row(
-                    children: [
-                      if (onCall != null) ...[
-                        _CardActionButton(
-                          icon: CupertinoIcons.phone_fill,
-                          label: 'โทร',
-                          isDark: isDark,
-                          onPressed: onCall!,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      if (onRoute != null) ...[
-                        _CardActionButton(
-                          icon: CupertinoIcons.arrow_turn_up_right,
-                          label: 'นำทาง',
-                          isDark: isDark,
-                          onPressed: onRoute!,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      const Spacer(),
-                      PressableScale(
-                        onTap: onTap,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 9,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: isDark
-                                ? const LinearGradient(
-                                    colors: [
-                                      Color(0xFF22C55E),
-                                      Color(0xFF16A34A),
-                                    ],
-                                  )
-                                : const LinearGradient(
-                                    colors: [
-                                      Color(0xFF0F5A3C),
-                                      Color(0xFF167B4C),
-                                    ],
-                                  ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (isDark
-                                        ? const Color(0xFF22C55E)
-                                        : const Color(0xFF0F5A3C))
-                                    .withOpacity(0.28),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'ดูร้านค้า',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark
-                                      ? const Color(0xFF04200E)
-                                      : Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                CupertinoIcons.chevron_right,
-                                size: 12,
-                                color: isDark
-                                    ? const Color(0xFF04200E)
-                                    : Colors.white,
-                              ),
-                            ],
-                          ),
-                        ),
+                ),
+                const SizedBox(height: 10),
+                Divider(
+                  height: 1,
+                  color: isDark ? AppDarkColors.borderLight : const Color(0xFFF1F5F2),
+                ),
+                const SizedBox(height: 9),
+                Row(
+                  children: [
+                    if (onCall != null)
+                      _buildPillAction(
+                        label: 'โทร',
+                        icon: Icons.phone_rounded,
+                        isDark: isDark,
+                        onTap: onCall!,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+                    const SizedBox(width: 8),
+                    if (onRoute != null)
+                      _buildPillAction(
+                        label: 'นำทาง',
+                        icon: CupertinoIcons.arrow_turn_up_right,
+                        isDark: isDark,
+                        onTap: onRoute!,
+                      ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: onTap,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'ดูร้านค้า',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 3),
+                          Icon(CupertinoIcons.chevron_right, size: 11),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -1271,20 +1234,16 @@ class FeaturedFarmCard extends StatelessWidget {
         ? AppDarkColors.textSecondary
         : AppColors.textSecondaryOf(context);
 
-    final locationOrDistance = _safeVegeLocationText(shop, distanceText);
-    final isRealDistance =
-        distanceText != null &&
-        distanceText != '—' &&
-        distanceText!.trim().isNotEmpty;
+    final imageUrl = getShopImageUrl(shop);
 
     return PressableScale(
       onTap: onTap,
       child: Container(
-        width: 280,
+        width: 275,
         height: 236,
         decoration: BoxDecoration(
           color: surfaceColor,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDark ? borderColor : const Color(0xFFE2ECE4),
             width: 0.9,
@@ -1309,168 +1268,127 @@ class FeaturedFarmCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Soft Tint Cover with badges
-            Container(
-              height: 104,
+            // Top Farm/Vegetable Photo with Badges
+            SizedBox(
+              height: 115,
               width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: isDark
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF132A1C),
-                          Color(0xFF1B3D2A),
-                          Color(0xFF153322),
-                        ],
-                      )
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF0C4D33),
-                          Color(0xFF17734B),
-                          Color(0xFF26915B),
-                        ],
-                      ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Positioned(
-                    right: -10,
-                    bottom: -20,
-                    child: Icon(
-                      CupertinoIcons.leaf_arrow_circlepath,
-                      size: 78,
-                      color: Colors.white.withOpacity(isDark ? 0.08 : 0.12),
-                    ),
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top Row: Featured Badge + Verified Badge
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xE01C261F)
-                                  : Colors.white.withOpacity(0.95),
-                              borderRadius: BorderRadius.circular(100),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  CupertinoIcons.star_fill,
-                                  size: 10,
-                                  color: Color(0xFFF59E0B),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'ร้านแนะนำ',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark
-                                        ? AppDarkColors.textPrimary
-                                        : const Color(0xFF1C2E22),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.35),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  CupertinoIcons.checkmark_seal_fill,
-                                  size: 10,
-                                  color: Color(0xFF86EFAC),
-                                ),
-                                SizedBox(width: 3),
-                                Text(
-                                  'รับรองแล้ว',
-                                  style: TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Bottom Row: Location / Distance Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.24),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isRealDistance
-                                  ? CupertinoIcons.location_fill
-                                  : CupertinoIcons.placemark,
-                              size: 10,
-                              color: const Color(0xFFD1FAE5),
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              locationOrDistance,
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                  // Dark gradient scrim at the top for badge contrast
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 40,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.3),
+                            Colors.transparent,
                           ],
                         ),
                       ),
-                    ],
+                    ),
+                  ),
+                  // Left Badge: ร้านแนะนำ
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(100),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.12),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            CupertinoIcons.star_fill,
+                            size: 10,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'ร้านแนะนำ',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Right Badge: รับรองแล้ว
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F5A3C).withOpacity(0.94),
+                        borderRadius: BorderRadius.circular(100),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            CupertinoIcons.checkmark_alt,
+                            size: 10,
+                            color: Color(0xFF86EFAC),
+                          ),
+                          SizedBox(width: 3),
+                          Text(
+                            'รับรองแล้ว',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Info Body
+            // Card Body
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1481,8 +1399,8 @@ class FeaturedFarmCard extends StatelessWidget {
                         Text(
                           shop.name,
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
                             color: textPrimary,
                             letterSpacing: -0.2,
                           ),
@@ -1492,19 +1410,17 @@ class FeaturedFarmCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.location_on_outlined,
-                              size: 12,
-                              color: isDark
-                                  ? AppDarkColors.secondary
-                                  : const Color(0xFF267D4F),
+                              size: 12.5,
+                              color: Color(0xFF10B981),
                             ),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
                                 shop.shortArea,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 11,
                                   color: textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1514,100 +1430,28 @@ class FeaturedFarmCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        // Vegetable pills
-                        if (shop.verifiedVegetables.isNotEmpty) ...[
-                          SizedBox(
-                            height: 24,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: shop.verifiedVegetables.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 5),
-                              itemBuilder: (ctx, vIdx) {
-                                final veg = shop.verifiedVegetables[vIdx];
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF1B2E21)
-                                        : const Color(0xFFEBF6EE),
-                                    borderRadius: BorderRadius.circular(100),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? const Color(0xFF2D4D36)
-                                          : const Color(0xFFCFE8D5),
-                                      width: 0.6,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _safeVegeEmoji(veg),
-                                        style: const TextStyle(fontSize: 10),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        veg,
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          color: isDark
-                                              ? const Color(0xFF6EE7B7)
-                                              : const Color(0xFF0F5A3C),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ] else ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1B2E21)
-                                  : const Color(0xFFEBF6EE),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Text(
-                              '🌱 ตรวจรับรองความปลอดภัย',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                color: isDark
-                                    ? const Color(0xFF6EE7B7)
-                                    : const Color(0xFF0F5A3C),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: 7),
+                        Wrap(
+                          spacing: 5,
+                          runSpacing: 4,
+                          children: _buildShopTagList(shop, isDark, maxTags: 2),
+                        ),
                       ],
                     ),
-                    // Action cue
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'ดูรายละเอียด',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
                             color: primaryColor,
                           ),
                         ),
                         Icon(
                           CupertinoIcons.chevron_right,
-                          size: 12,
+                          size: 11,
                           color: primaryColor,
                         ),
                       ],
@@ -1647,19 +1491,19 @@ class TrustHighlightBanner extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isDark
               ? const LinearGradient(
-                  colors: [Color(0xFF142B1E), Color(0xFF0F1E15)],
+                  colors: [Color(0xFF13281C), Color(0xFF0F1E15)],
                 )
               : const LinearGradient(
-                  colors: [Color(0xFFF2FBF5), Color(0xFFE5F5EB)],
+                  colors: [Color(0xFFEFFBF3), Color(0xFFE4F7EC)],
                 ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? const Color(0xFF285037) : const Color(0xFFC7E5CF),
-            width: 1,
+            color: isDark ? const Color(0xFF285037) : const Color(0xFFCFEBD6),
+            width: 0.9,
           ),
           boxShadow: [
             BoxShadow(
-              color: primaryColor.withOpacity(isDark ? 0.08 : 0.07),
+              color: primaryColor.withOpacity(isDark ? 0.08 : 0.06),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -1671,17 +1515,17 @@ class TrustHighlightBanner extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   gradient: isDark
                       ? const LinearGradient(
                           colors: [Color(0xFF22C55E), Color(0xFF15803D)],
                         )
                       : const LinearGradient(
-                          colors: [Color(0xFF15764D), Color(0xFF0C4D32)],
+                          colors: [Color(0xFF0F5A3C), Color(0xFF08412B)],
                         ),
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
                       color: primaryColor.withOpacity(isDark ? 0.35 : 0.22),
@@ -1696,9 +1540,9 @@ class TrustHighlightBanner extends StatelessWidget {
                     minScale: 0.92,
                     maxScale: 1.1,
                     child: const Icon(
-                      CupertinoIcons.checkmark_seal_fill,
+                      CupertinoIcons.checkmark_shield_fill,
                       color: Colors.white,
-                      size: 24,
+                      size: 22,
                     ),
                   ),
                 ),
@@ -1711,7 +1555,7 @@ class TrustHighlightBanner extends StatelessWidget {
                     Text(
                       'ตรวจสอบสถานะการรับรองก่อนเลือกซื้อ',
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: textPrimary,
                         letterSpacing: -0.2,
@@ -1723,7 +1567,7 @@ class TrustHighlightBanner extends StatelessWidget {
                     Text(
                       'ดูผลตรวจและวันที่รับรองได้จากข้อมูลของแต่ละร้าน',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1735,10 +1579,21 @@ class TrustHighlightBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6.5),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                  color: isDark ? const Color(0xFF1F3D2B) : Colors.white,
                   borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2E5E41) : const Color(0xFFD6EDE0),
+                    width: 0.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1748,13 +1603,13 @@ class TrustHighlightBanner extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF0F5A3C),
                       ),
                     ),
                     const SizedBox(width: 2),
                     Icon(
                       CupertinoIcons.chevron_right,
-                      color: primaryColor,
+                      color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF0F5A3C),
                       size: 11,
                     ),
                   ],
