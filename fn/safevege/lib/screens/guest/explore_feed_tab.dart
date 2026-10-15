@@ -219,43 +219,89 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // Top Custom App Bar
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                     child: Row(
                       children: [
-                        // SafeVege Logo & Brand (Clean, natural unclipped)
+                        // SafeVege Logo & Brand (Clean, premium badge)
                         Expanded(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Image.asset(
-                                'assets/safevege_logo.png',
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.contain,
+                              Container(
+                                width: 44,
+                                height: 44,
+                                padding: const EdgeInsets.all(5.5),
+                                decoration: BoxDecoration(
+                                  color: surfaceElevated,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: primaryColor.withOpacity(
+                                      isDark ? 0.3 : 0.18,
+                                    ),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: primaryColor.withOpacity(
+                                        isDark ? 0.2 : 0.08,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Image.asset(
+                                  'assets/safevege_logo.png',
+                                  fit: BoxFit.contain,
+                                ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 11),
                               Flexible(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      'SafeVege',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w800,
-                                        color: primaryColor,
-                                        letterSpacing: -0.3,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'SafeVege',
+                                          style: TextStyle(
+                                            fontSize: 21,
+                                            fontWeight: FontWeight.w900,
+                                            color: primaryColor,
+                                            letterSpacing: -0.4,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isDark
+                                                ? const Color(0xFF34D399)
+                                                : const Color(0xFF16A34A),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: primaryColor.withOpacity(
+                                                  0.5,
+                                                ),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     Text(
                                       'ผักปลอดภัย มั่นใจทุกมื้อ',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 11.5,
                                         color: textSecondary,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -275,7 +321,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             PressableScale(
                               onTap: () => widget.appState.toggleThemeMode(),
                               child: Container(
-                                padding: const EdgeInsets.all(7.5),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: surfaceElevated,
                                   shape: BoxShape.circle,
@@ -299,8 +345,8 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5.5,
+                                horizontal: 11,
+                                vertical: 6.5,
                               ),
                               decoration: BoxDecoration(
                                 color: surfaceElevated,
@@ -308,7 +354,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                 border: Border.all(
                                   color: isDark
                                       ? borderColor
-                                      : const Color(0xFFE2EAE3),
+                                      : const Color(0xFFDCE6DF),
                                   width: 0.8,
                                 ),
                                 boxShadow: AppShadows.cardOf(context),
@@ -318,14 +364,16 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                 children: [
                                   Icon(
                                     Icons.location_on_rounded,
-                                    size: 13,
-                                    color: primaryColor,
+                                    size: 13.5,
+                                    color: isDark
+                                        ? AppDarkColors.primary
+                                        : AppColors.primary,
                                   ),
-                                  const SizedBox(width: 3),
+                                  const SizedBox(width: 4),
                                   Text(
                                     'เชียงราย',
                                     style: TextStyle(
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: textPrimary,
                                     ),
@@ -337,7 +385,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             PressableScale(
                               onTap: widget.onOpenAccount,
                               child: Container(
-                                padding: const EdgeInsets.all(7.5),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: surfaceElevated,
                                   shape: BoxShape.circle,
@@ -350,7 +398,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   boxShadow: AppShadows.cardOf(context),
                                 ),
                                 child: Icon(
-                                  CupertinoIcons.person_crop_circle,
+                                  CupertinoIcons.person_crop_circle_fill,
                                   size: 18,
                                   color: primaryColor,
                                 ),
@@ -366,11 +414,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // Search Bar (iOS Minimal Modern style)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                     child: Container(
                       decoration: BoxDecoration(
                         color: surfaceElevated,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: isDark
                             ? AppShadows.cardDark
                             : [
@@ -426,30 +474,51 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   onTap: widget.onOpenMap,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
+                                      horizontal: 12,
+                                      vertical: 7,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: primaryColor.withOpacity(
-                                        isDark ? 0.2 : 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
+                                      gradient: isDark
+                                          ? const LinearGradient(
+                                              colors: [
+                                                Color(0xFF22C55E),
+                                                Color(0xFF16A34A),
+                                              ],
+                                            )
+                                          : const LinearGradient(
+                                              colors: [
+                                                Color(0xFF0F5A3C),
+                                                Color(0xFF176E48),
+                                              ],
+                                            ),
+                                      borderRadius: BorderRadius.circular(14),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: primaryColor.withOpacity(0.25),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
-                                          CupertinoIcons.map,
-                                          size: 14,
-                                          color: primaryColor,
+                                          CupertinoIcons.map_fill,
+                                          size: 13,
+                                          color: isDark
+                                              ? const Color(0xFF04200E)
+                                              : Colors.white,
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 5),
                                         Text(
                                           'แผนที่',
                                           style: TextStyle(
-                                            fontSize: 11.5,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: primaryColor,
+                                            color: isDark
+                                                ? const Color(0xFF04200E)
+                                                : Colors.white,
                                           ),
                                         ),
                                       ],

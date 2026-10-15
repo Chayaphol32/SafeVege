@@ -754,18 +754,32 @@ class MarketplaceShopCard extends StatelessWidget {
           color: surfaceColor,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isDark ? borderColor : const Color(0xFFE3ECE5),
+            color: isDark ? borderColor : const Color(0xFFE2EBE4),
             width: 0.9,
           ),
-          boxShadow: isDark ? AppShadows.cardDark : AppShadows.card,
+          boxShadow: isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: const Color(0x0A0F3820),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Lush botanical header banner
+            // Lush botanical header banner with integrated info & badges
             Container(
-              height: 106,
+              height: 76,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: isDark
@@ -773,46 +787,33 @@ class MarketplaceShopCard extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF13281C),
-                          Color(0xFF1A3827),
-                          Color(0xFF153021),
+                          Color(0xFF132B1D),
+                          Color(0xFF1B3D2A),
+                          Color(0xFF153322),
                         ],
                       )
                     : const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF0D5337),
-                          Color(0xFF157049),
-                          Color(0xFF228B59),
+                          Color(0xFF0C4D33),
+                          Color(0xFF156E47),
+                          Color(0xFF208A56),
                         ],
                       ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Stack(
                 children: [
-                  // Decorative watermarked leaves with organic floating animation
                   Positioned(
-                    right: -10,
-                    bottom: -22,
+                    right: -6,
+                    bottom: -18,
                     child: FloatingElement(
-                      distance: 3.5,
+                      distance: 3.0,
                       child: Icon(
                         CupertinoIcons.leaf_arrow_circlepath,
-                        size: 96,
-                        color: Colors.white.withOpacity(isDark ? 0.08 : 0.12),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 60,
-                    top: -14,
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.04),
+                        size: 80,
+                        color: Colors.white.withOpacity(isDark ? 0.07 : 0.12),
                       ),
                     ),
                   ),
@@ -821,26 +822,26 @@ class MarketplaceShopCard extends StatelessWidget {
                     children: [
                       // Farm / Shop Emblem squircle
                       Container(
-                        width: 52,
-                        height: 52,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppDarkColors.surfaceElevated
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(15),
                           border: Border.all(
                             color: Colors.white.withOpacity(
-                              isDark ? 0.15 : 0.8,
+                              isDark ? 0.2 : 0.85,
                             ),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(
-                                isDark ? 0.35 : 0.08,
+                                isDark ? 0.35 : 0.1,
                               ),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
@@ -850,7 +851,7 @@ class MarketplaceShopCard extends StatelessWidget {
                             color: isDark
                                 ? AppDarkColors.primary
                                 : const Color(0xFF167B4C),
-                            size: 28,
+                            size: 26,
                           ),
                         ),
                       ),
@@ -861,87 +862,93 @@ class MarketplaceShopCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Verified SafeVege trust pill
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(
-                                  isDark ? 0.12 : 0.22,
-                                ),
-                                borderRadius: BorderRadius.circular(100),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.35),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  PulseBadge(
-                                    minScale: 0.9,
-                                    maxScale: 1.15,
-                                    duration: const Duration(milliseconds: 2000),
-                                    child: const Icon(
-                                      CupertinoIcons.checkmark_seal_fill,
-                                      size: 11,
-                                      color: Color(0xFF86EFAC),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(
+                                      isDark ? 0.14 : 0.22,
+                                    ),
+                                    borderRadius: BorderRadius.circular(100),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.35),
+                                      width: 0.8,
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    shop.isVerified
-                                        ? 'ตรวจผ่านการรับรอง'
-                                        : 'รอการตรวจรับรอง',
-                                    style: const TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 0.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            // Distance / Location indicator pill
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(
-                                  isDark ? 0.3 : 0.18,
-                                ),
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isRealDistance
-                                        ? CupertinoIcons.location_fill
-                                        : CupertinoIcons.placemark,
-                                    size: 10.5,
-                                    color: const Color(0xFFD1FAE5),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      locationOrDistance,
-                                      style: const TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      PulseBadge(
+                                        minScale: 0.9,
+                                        maxScale: 1.15,
+                                        duration: const Duration(milliseconds: 2000),
+                                        child: const Icon(
+                                          CupertinoIcons.checkmark_seal_fill,
+                                          size: 11,
+                                          color: Color(0xFF86EFAC),
+                                        ),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        shop.isVerified
+                                            ? 'ตรวจผ่านการรับรอง'
+                                            : 'รอการตรวจรับรอง',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: 0.1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // Distance / Location indicator pill
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(
+                                        isDark ? 0.32 : 0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isRealDistance
+                                              ? CupertinoIcons.location_fill
+                                              : CupertinoIcons.placemark,
+                                          size: 10.5,
+                                          color: const Color(0xFFD1FAE5),
+                                        ),
+                                        const SizedBox(width: 3.5),
+                                        Flexible(
+                                          child: Text(
+                                            locationOrDistance,
+                                            style: const TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -953,7 +960,7 @@ class MarketplaceShopCard extends StatelessWidget {
                           onToggle: onFavorite!,
                           size: 19,
                           backgroundColor: Colors.black.withOpacity(
-                            isDark ? 0.35 : 0.22,
+                            isDark ? 0.35 : 0.24,
                           ),
                         ),
                       ],
@@ -981,7 +988,7 @@ class MarketplaceShopCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
 
-                  // Area and owner info (NO dangling empty owner label!)
+                  // Area and owner info
                   Row(
                     children: [
                       Icon(
@@ -1145,60 +1152,83 @@ class MarketplaceShopCard extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   // Actions row: Call, Directions, View Shop Details
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
+                  Row(
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (onCall != null) ...[
-                            _CardActionButton(
-                              icon: CupertinoIcons.phone_fill,
-                              label: 'โทร',
-                              isDark: isDark,
-                              onPressed: onCall!,
-                            ),
-                            const SizedBox(width: 6),
-                          ],
-                          if (onRoute != null)
-                            _CardActionButton(
-                              icon: CupertinoIcons.arrow_turn_up_right,
-                              label: 'นำทาง',
-                              isDark: isDark,
-                              onPressed: onRoute!,
-                            ),
-                        ],
-                      ),
-                      FilledButton(
-                        onPressed: onTap,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: isDark
-                              ? const Color(0xFF04200E)
-                              : Colors.white,
-                          elevation: 0,
-                          minimumSize: const Size(0, 36),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      if (onCall != null) ...[
+                        _CardActionButton(
+                          icon: CupertinoIcons.phone_fill,
+                          label: 'โทร',
+                          isDark: isDark,
+                          onPressed: onCall!,
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'ดูร้านค้า',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.bold,
+                        const SizedBox(width: 8),
+                      ],
+                      if (onRoute != null) ...[
+                        _CardActionButton(
+                          icon: CupertinoIcons.arrow_turn_up_right,
+                          label: 'นำทาง',
+                          isDark: isDark,
+                          onPressed: onRoute!,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      const Spacer(),
+                      PressableScale(
+                        onTap: onTap,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: isDark
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF22C55E),
+                                      Color(0xFF16A34A),
+                                    ],
+                                  )
+                                : const LinearGradient(
+                                    colors: [
+                                      Color(0xFF0F5A3C),
+                                      Color(0xFF167B4C),
+                                    ],
+                                  ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (isDark
+                                        ? const Color(0xFF22C55E)
+                                        : const Color(0xFF0F5A3C))
+                                    .withOpacity(0.28),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(CupertinoIcons.chevron_right, size: 11),
-                          ],
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'ดูร้านค้า',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? const Color(0xFF04200E)
+                                      : Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                CupertinoIcons.chevron_right,
+                                size: 12,
+                                color: isDark
+                                    ? const Color(0xFF04200E)
+                                    : Colors.white,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1251,15 +1281,29 @@ class FeaturedFarmCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 280,
-        height: 232,
+        height: 236,
         decoration: BoxDecoration(
           color: surfaceColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isDark ? borderColor : const Color(0xFFE3ECE5),
+            color: isDark ? borderColor : const Color(0xFFE2ECE4),
             width: 0.9,
           ),
-          boxShadow: isDark ? AppShadows.cardDark : AppShadows.card,
+          boxShadow: isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: const Color(0x0A0F3820),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -1275,18 +1319,18 @@ class FeaturedFarmCard extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF13281C),
-                          Color(0xFF1A3827),
-                          Color(0xFF153021),
+                          Color(0xFF132A1C),
+                          Color(0xFF1B3D2A),
+                          Color(0xFF153322),
                         ],
                       )
                     : const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF0D5337),
-                          Color(0xFF176E48),
-                          Color(0xFF268D57),
+                          Color(0xFF0C4D33),
+                          Color(0xFF17734B),
+                          Color(0xFF26915B),
                         ],
                       ),
               ),
@@ -1423,7 +1467,7 @@ class FeaturedFarmCard extends StatelessWidget {
               ),
             ),
 
-            // Info Body (expanded to fill the remaining 128px)
+            // Info Body
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -1437,7 +1481,7 @@ class FeaturedFarmCard extends StatelessWidget {
                         Text(
                           shop.name,
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: textPrimary,
                             letterSpacing: -0.2,
@@ -1479,7 +1523,7 @@ class FeaturedFarmCard extends StatelessWidget {
                               scrollDirection: Axis.horizontal,
                               itemCount: shop.verifiedVegetables.length,
                               separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 5),
                               itemBuilder: (ctx, vIdx) {
                                 final veg = shop.verifiedVegetables[vIdx];
                                 return Container(
@@ -1556,14 +1600,14 @@ class FeaturedFarmCard extends StatelessWidget {
                         Text(
                           'ดูรายละเอียด',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: primaryColor,
                           ),
                         ),
                         Icon(
                           CupertinoIcons.chevron_right,
-                          size: 11,
+                          size: 12,
                           color: primaryColor,
                         ),
                       ],
@@ -1603,19 +1647,19 @@ class TrustHighlightBanner extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isDark
               ? const LinearGradient(
-                  colors: [Color(0xFF162D20), Color(0xFF122218)],
+                  colors: [Color(0xFF142B1E), Color(0xFF0F1E15)],
                 )
               : const LinearGradient(
-                  colors: [Color(0xFFEFF8F2), Color(0xFFE6F3EA)],
+                  colors: [Color(0xFFF2FBF5), Color(0xFFE5F5EB)],
                 ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? const Color(0xFF264933) : const Color(0xFFCCE4D3),
+            color: isDark ? const Color(0xFF285037) : const Color(0xFFC7E5CF),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: primaryColor.withOpacity(isDark ? 0.08 : 0.06),
+              color: primaryColor.withOpacity(isDark ? 0.08 : 0.07),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -1627,30 +1671,35 @@ class TrustHighlightBanner extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   gradient: isDark
                       ? const LinearGradient(
-                          colors: [Color(0xFF1E3D2A), Color(0xFF162D20)],
+                          colors: [Color(0xFF22C55E), Color(0xFF15803D)],
                         )
                       : const LinearGradient(
-                          colors: [Color(0xFF136743), Color(0xFF0F5637)],
+                          colors: [Color(0xFF15764D), Color(0xFF0C4D32)],
                         ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryColor.withOpacity(isDark ? 0.3 : 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: primaryColor.withOpacity(isDark ? 0.35 : 0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: Center(
-                  child: Icon(
-                    CupertinoIcons.checkmark_seal_fill,
-                    color: isDark ? AppDarkColors.primary : Colors.white,
-                    size: 24,
+                  child: PulseBadge(
+                    duration: const Duration(milliseconds: 2200),
+                    minScale: 0.92,
+                    maxScale: 1.1,
+                    child: const Icon(
+                      CupertinoIcons.checkmark_seal_fill,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                 ),
               ),
@@ -1686,17 +1735,29 @@ class TrustHighlightBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isDark ? Colors.white : primaryColor).withOpacity(
-                    0.08,
-                  ),
-                  shape: BoxShape.circle,
+                  color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                child: Icon(
-                  CupertinoIcons.chevron_right,
-                  color: primaryColor,
-                  size: 14,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'ดูผลตรวจ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      color: primaryColor,
+                      size: 11,
+                    ),
+                  ],
                 ),
               ),
             ],
