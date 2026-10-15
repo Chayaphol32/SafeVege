@@ -336,16 +336,18 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          'SafeVege',
-                                          style: TextStyle(
-                                            fontSize: 21,
-                                            fontWeight: FontWeight.w900,
-                                            color: primaryColor,
-                                            letterSpacing: -0.4,
+                                        Flexible(
+                                          child: Text(
+                                            'SafeVege',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900,
+                                              color: primaryColor,
+                                              letterSpacing: -0.4,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(width: 4),
                                         Container(
@@ -371,7 +373,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                     Text(
                                       'ผักปลอดภัย มั่นใจทุกมื้อ',
                                       style: TextStyle(
-                                        fontSize: 11.5,
+                                        fontSize: 11,
                                         color: textSecondary,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -384,7 +386,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
 
                         // Top Bar Right Controls (Location, Bell badge, User avatar)
                         Row(
@@ -392,8 +394,8 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
+                                horizontal: 8,
+                                vertical: 5,
                               ),
                               decoration: BoxDecoration(
                                 color: surfaceElevated,
@@ -411,16 +413,16 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                 children: [
                                   Icon(
                                     Icons.location_on_rounded,
-                                    size: 13.5,
+                                    size: 13,
                                     color: isDark
                                         ? AppDarkColors.primary
                                         : AppColors.primary,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 3),
                                   Text(
                                     'เชียงราย',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
                                       color: textPrimary,
                                     ),
@@ -428,20 +430,20 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   const SizedBox(width: 2),
                                   Icon(
                                     CupertinoIcons.chevron_down,
-                                    size: 10,
+                                    size: 9.5,
                                     color: textSecondary,
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             // Bell with Badge 1
                             PressableScale(
                               onTap: () {
                                 AppFeedback.showInfo(context, 'ไม่มีการแจ้งเตือนใหม่');
                               },
                               child: Container(
-                                padding: const EdgeInsets.all(7.5),
+                                padding: const EdgeInsets.all(7),
                                 decoration: BoxDecoration(
                                   color: surfaceElevated,
                                   shape: BoxShape.circle,
@@ -457,24 +459,24 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   label: const Text('1'),
                                   backgroundColor: const Color(0xFFEF4444),
                                   textStyle: const TextStyle(
-                                    fontSize: 9.5,
+                                    fontSize: 9,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   child: Icon(
                                     CupertinoIcons.bell,
-                                    size: 18,
+                                    size: 17,
                                     color: textPrimary,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             // Avatar Icon
                             PressableScale(
                               onTap: widget.onOpenAccount,
                               child: Container(
-                                width: 34,
-                                height: 34,
+                                width: 32,
+                                height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -692,12 +694,12 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                         children: [
                           // Content Row
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(18, 14, 14, 12),
+                            padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
                             child: Row(
                               children: [
                                 // Left text column
                                 Expanded(
-                                  flex: 6,
+                                  flex: 7,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -705,7 +707,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                       Text(
                                         'ค้นหาร้านผักปลอดภัยใกล้คุณ',
                                         style: TextStyle(
-                                          fontSize: 17,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w900,
                                           color: isDark ? Colors.white : const Color(0xFF0D4D31),
                                           letterSpacing: -0.3,
@@ -713,24 +715,24 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 5),
+                                      const SizedBox(height: 4),
                                       Text(
                                         'ผักสด คุณภาพดี ตรวจสอบได้ เพื่อสุขภาพที่ดีกว่า',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 10.5,
                                           color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF236544),
                                           fontWeight: FontWeight.w500,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 10),
+                                      const SizedBox(height: 8),
                                       PressableScale(
                                         onTap: () => widget.onCategoryChanged('ใกล้ฉัน'),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 6.5,
+                                            horizontal: 10,
+                                            vertical: 5.5,
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF0F5A3C),
@@ -746,18 +748,22 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                           child: const Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                'ดูร้านใกล้ฉัน',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 11.5,
+                                              Flexible(
+                                                child: Text(
+                                                  'ดูร้านใกล้ฉัน',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 11,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                              SizedBox(width: 4),
+                                              SizedBox(width: 3),
                                               Icon(
                                                 CupertinoIcons.chevron_right,
-                                                size: 11,
+                                                size: 10,
                                                 color: Colors.white,
                                               ),
                                             ],
@@ -1067,7 +1073,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 232,
+                      height: 238,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         scrollDirection: Axis.horizontal,

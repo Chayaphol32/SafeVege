@@ -852,6 +852,8 @@ class MarketplaceShopCard extends StatelessWidget {
     final imageUrl = getShopImageUrl(shop);
     final displayDistance = isRealDistance ? distanceText! : 'ใกล้ฉัน';
 
+    final isWide = MediaQuery.sizeOf(context).width >= 650;
+
     return PressableScale(
       onTap: onTap,
       child: Container(
@@ -869,12 +871,8 @@ class MarketplaceShopCard extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         padding: const EdgeInsets.all(12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 600;
-
-            if (isWide) {
-              return Row(
+        child: isWide
+            ? Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // 1. Photo on left
@@ -1037,13 +1035,11 @@ class MarketplaceShopCard extends StatelessWidget {
                     ],
                   ),
                 ],
-              );
-            }
-
-            // Compact / Mobile Layout (< 600px)
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              )
+            // Compact / Mobile Layout (< 650px)
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1198,9 +1194,7 @@ class MarketplaceShopCard extends StatelessWidget {
                   ],
                 ),
               ],
-            );
-          },
-        ),
+            ),
       ),
     );
   }
@@ -1240,7 +1234,6 @@ class FeaturedFarmCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 275,
-        height: 236,
         decoration: BoxDecoration(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
