@@ -1,0 +1,43 @@
+﻿# Root gitignore for SafeVege
+
+# Operating System
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# IDE & Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Flutter / Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/coverage/
+
+# Local run & keys
+**/env/local.json
+app.*.symbols
+app.*.map.json
+
+# Android Studio / Xcode
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/.widget_preview/
+
+# Backend (PHP)
+bn/.env
+bn/tmp/
+bn/storage/*
+!bn/storage/.gitkeep
+
+# Logs
+*.log
