@@ -996,7 +996,9 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
               boxShadow: isDark ? AppShadows.cardDark : AppShadows.card,
             ),
             clipBehavior: Clip.antiAlias,
-            child: ListView.separated(
+            child: Material(
+              color: Colors.transparent,
+              child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: recentEvents.length,
@@ -1055,6 +1057,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
               },
             ),
           ),
+        ),
       ],
     );
   }

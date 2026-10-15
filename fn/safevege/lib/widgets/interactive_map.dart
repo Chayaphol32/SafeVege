@@ -183,9 +183,12 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
       : (widget.compact ? 12.5 : 13.8);
 
   void _animateTo(double latitude, double longitude, double zoom) {
-    try {
-      _mapController.move(LatLng(latitude, longitude), zoom);
-    } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        _mapController.move(LatLng(latitude, longitude), zoom);
+      } catch (_) {}
+    });
   }
 
   void _onMapTap(TapPosition _, LatLng point) {
@@ -265,7 +268,8 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
                     userAgentPackageName: 'com.safevege.safevege',
                     tileProvider: NetworkTileProvider(
                       headers: <String, String>{
-                        'User-Agent': 'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
+                        'User-Agent':
+                            'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
                       },
                     ),
                     maxZoom: 19,
@@ -284,7 +288,8 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
                   userAgentPackageName: 'com.safevege.safevege',
                   tileProvider: NetworkTileProvider(
                     headers: <String, String>{
-                      'User-Agent': 'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
+                      'User-Agent':
+                          'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
                     },
                   ),
                   maxZoom: 19,
