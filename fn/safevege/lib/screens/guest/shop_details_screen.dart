@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/app_theme.dart';
@@ -12,7 +13,6 @@ import '../../widgets/interactive_animations.dart';
 import '../../widgets/interactive_map.dart';
 import 'inspection_history_screen.dart';
 import 'certificate_viewer_screen.dart';
-import 'route_navigation_screen.dart';
 
 class ShopDetailsScreen extends StatefulWidget {
   const ShopDetailsScreen({
@@ -195,14 +195,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     }
   }
 
-  void _openInAppRoute(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RouteNavigationScreen(shop: shop),
-      ),
-    );
-  }
+
 
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
@@ -1457,80 +1450,141 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   // 5. LOCATION & INTEGRATED MAP CARD
   // ==========================================
   Widget _buildLocationAndMapCard(BuildContext context, bool isDark) {
+    final primaryColor = AppColors.primaryOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final surfaceElevated = isDark
+        ? AppDarkColors.surfaceElevated
+        : const Color(0xFFF3F7F4);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceOf(context),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: AppColors.borderOf(context),
           width: 1.1,
         ),
         boxShadow: AppShadows.cardOf(context),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
+          // Header Row with location title & distance badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.map_rounded,
-                    size: 19,
-                    color: AppColors.primaryOf(context),
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.location_on_rounded,
+                      size: 18,
+                      color: primaryColor,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Text(
-                    'ตำแหน่งและการเดินทาง',
+                    'ตำแหน่งที่ตั้งร้าน',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.textPrimaryOf(context),
+                      fontSize: 15.5,
+                      color: textPrimary,
                     ),
                   ),
                 ],
               ),
-              TextButton.icon(
-                onPressed: _openGoogleMaps,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+              if (shop.distanceText != '—' && shop.distanceText.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: primaryColor.withOpacity(0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.near_me_rounded, size: 12, color: primaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'ห่าง ${shop.distanceText}',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                label: const Text(
-                  'Google Maps',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Address detail row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 17,
-                color: AppColors.textSecondaryOf(context),
+          // Address detail box with copy button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? AppDarkColors.border.withOpacity(0.5)
+                    : const Color(0xFFE5EDE7),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  shop.fullAddress,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondaryOf(context),
-                    height: 1.35,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.storefront_rounded,
+                  size: 18,
+                  color: primaryColor,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    shop.fullAddress,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: textSecondary,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                IconButton(
+                  tooltip: 'คัดลอกที่อยู่',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    Icons.copy_rounded,
+                    size: 16,
+                    color: primaryColor,
+                  ),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: shop.fullAddress));
+                    AppFeedback.showSuccess(context, 'คัดลอกที่อยู่เรียบร้อยแล้ว');
+                  },
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -1539,9 +1593,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: SizedBox(
-              height: 165,
+              height: 170,
               child: SafeVegeInteractiveMap(
-                height: 165,
+                height: 170,
                 compact: true,
                 shops: [shop],
                 selectedShop: shop,
@@ -1549,46 +1603,34 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Action row under map: Google Maps & In-app Route
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _openGoogleMaps,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primaryOf(context),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.turn_right_rounded, size: 16),
-                  label: const Text(
-                    'นำทาง (Google Maps)',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                  ),
+          // Full-width prominent Google Maps navigation button
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: FilledButton.icon(
+              onPressed: _openGoogleMaps,
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    isDark ? AppDarkColors.primary : AppColors.primary,
+                foregroundColor:
+                    isDark ? const Color(0xFF04200E) : Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () => _openInAppRoute(context),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.borderOf(context)),
-                  minimumSize: const Size(0, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.directions_outlined, size: 16),
-                label: const Text(
-                  'แผนที่ในแอป',
-                  style: TextStyle(fontSize: 12.5),
+              icon: const Icon(Icons.turn_right_rounded, size: 18),
+              label: const Text(
+                'เปิดนำทางด้วย Google Maps',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.2,
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
