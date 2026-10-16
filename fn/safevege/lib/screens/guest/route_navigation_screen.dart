@@ -27,7 +27,7 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
   bool _isGettingLocation = false;
   String? _originLabel;
 
-  TravelMode _travelMode = TravelMode.driving;
+  final TravelMode _travelMode = TravelMode.driving;
   OsmRouteResult? _routeResult;
   bool _isNavigating = false;
   int _currentStepIndex = 0;
@@ -143,13 +143,6 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
     });
   }
 
-  void _setTravelMode(TravelMode mode) {
-    if (_travelMode == mode) return;
-    setState(() {
-      _travelMode = mode;
-      _currentStepIndex = 0;
-    });
-  }
 
   void _startNavigation() {
     _openExternalGoogleMaps();
@@ -1056,34 +1049,8 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 10),
-
-            // Mode Selector
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildModeChip(
-                    TravelMode.driving,
-                    Icons.directions_car_rounded,
-                    'ขับรถยนต์',
-                  ),
-                  const SizedBox(width: 8),
-                  _buildModeChip(
-                    TravelMode.motorcycle,
-                    Icons.two_wheeler_rounded,
-                    'มอเตอร์ไซค์',
-                  ),
-                  const SizedBox(width: 8),
-                  _buildModeChip(
-                    TravelMode.walking,
-                    Icons.directions_walk_rounded,
-                    'เดินเท้า',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
+            if (_routeResult != null && _origin != null)
+              const SizedBox(height: 10),
 
             // Stats row (if route calculated)
             if (_routeResult != null && _origin != null) ...[
@@ -1298,53 +1265,4 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
     );
   }
 
-  Widget _buildModeChip(TravelMode mode, IconData icon, String label) {
-    final isSelected = _travelMode == mode;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
-    final selectedTextColor = isDark ? const Color(0xFF04200E) : Colors.white;
-
-    return InkWell(
-      onTap: () => _setTravelMode(mode),
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? primaryColor
-              : (isDark ? AppDarkColors.surfaceElevated : Colors.grey.shade100),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? primaryColor
-                : (isDark ? AppDarkColors.border : Colors.transparent),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected
-                  ? selectedTextColor
-                  : (isDark ? AppDarkColors.textSecondary : Colors.black87),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? selectedTextColor
-                    : (isDark ? AppDarkColors.textSecondary : Colors.black87),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
