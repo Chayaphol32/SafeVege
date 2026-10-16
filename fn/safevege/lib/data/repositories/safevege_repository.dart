@@ -198,14 +198,6 @@ class SafeVegeRepository {
     return _shop(data, publicByDefault: true);
   }
 
-  Future<List<CertificateModel>> getPublicShopCertificates(
-    ShopModel shop,
-  ) async {
-    final response = await api.getJson('/shops/${shop.id}/certificates');
-    return _list(response['data'])
-        .map((json) => _certificate(json, shop))
-        .toList(growable: false);
-  }
 
   Future<List<CertificateModel>> getPublicCertificates() async {
     final response = await api.getJson('/certificates');
@@ -227,8 +219,6 @@ class SafeVegeRepository {
         .toList(growable: false);
   }
 
-  Future<Uint8List> downloadCertificate(String certificateId) =>
-      api.getBytes('/certificates/$certificateId/file');
 
   Future<List<ShopModel>> getMyShops() async {
     final response = await api.getJson('/my/shops');
@@ -469,20 +459,6 @@ class SafeVegeRepository {
     );
   }
 
-  static CertificateModel _certificate(
-    Map<String, dynamic> json,
-    ShopModel shop,
-  ) => CertificateModel(
-    id: _string(json['id']),
-    shopId: shop.id,
-    shopName: shop.name,
-    certificateNumber: _string(json['certificate_no']),
-    issuedAt:
-        _date(json['issued_at']) ?? DateTime.fromMillisecondsSinceEpoch(0),
-    expiresAt: _date(json['expires_at']),
-    isPublic: _bool(json['is_public'], defaultValue: true),
-    vegetables: shop.verifiedVegetables,
-  );
 
   static InspectionRequestModel _requestSummary(Map<String, dynamic> json) =>
       InspectionRequestModel(

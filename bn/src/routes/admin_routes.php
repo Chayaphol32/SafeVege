@@ -296,7 +296,15 @@ function admin_routes(PDO $db, string $method, array $p): bool {
         $issuedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $issued);
         if (!$issuedDate || $issuedDate->format('Y-m-d') !== $issued) throw new ApiError(422, 'Invalid issued_at date');
         $expires = optional_string($_POST, 'expires_at', 10);
-        if ($expires !== null) { $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expires); if (!$expiry || $expiry->format('Y-m-d') !== $expires || $expires < $issued) throw new ApiError(422, 'Invalid expires_at date'); }
+        if ($expires === null || trim($expires) === '') {
+            $settingRow = all_rows($db, "SELECT setting_value FROM api_app_settings WHERE setting_key = 'default_certificate_expiry_days' LIMIT 1");
+            $days = $settingRow ? (int)json_decode((string)$settingRow[0]['setting_value'], true) : 365;
+            if ($days < 1) $days = 365;
+            $expires = $issuedDate->modify("+{$days} days")->format('Y-m-d');
+        } else {
+            $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expires);
+            if (!$expiry || $expiry->format('Y-m-d') !== $expires || $expires < $issued) throw new ApiError(422, 'Invalid expires_at date');
+        }
         $resultIds = json_decode((string)($_POST['result_ids'] ?? ''), true);
         if (!is_array($resultIds) || count($resultIds) < 1 || count($resultIds) > 30) throw new ApiError(422, 'result_ids must be a JSON array');
         $resultIds = array_values(array_unique(array_map('intval', $resultIds)));

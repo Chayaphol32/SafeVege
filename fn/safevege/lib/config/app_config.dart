@@ -36,4 +36,7 @@ class AppConfig {
     isAndroid: defaultTargetPlatform == TargetPlatform.android,
     isRelease: kReleaseMode,
   );
+
+  /// ที่อยู่เว็บสาธารณะ (Public Web Base URL) สำหรับเปิด/แชร์เอกสาร
+  static String? publicAppBaseUrl;
 }

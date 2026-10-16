@@ -32,6 +32,28 @@ try {
         send_json(200, ['status' => 'ok']);
     }
     $db = db();
+    $maintRow = all_rows($db, "SELECT setting_value FROM api_app_settings WHERE setting_key = 'maintenance_mode' LIMIT 1");
+    $isMaintenance = false;
+    if ($maintRow) {
+        $maintVal = json_decode((string)$maintRow[0]['setting_value'], true);
+        $isMaintenance = ($maintVal === true || $maintVal === 1 || $maintVal === 'true');
+    }
+    if ($isMaintenance) {
+        $isHealth = ($p === ['health']);
+        $isAdminRoute = (($p[0] ?? '') === 'admin');
+        if (!$isHealth && !$isAdminRoute) {
+            $user = null;
+            try { $user = current_user($db); } catch (Throwable) {}
+            if (!$user || !in_array($user['role'] ?? '', ['admin', 'super_admin'], true)) {
+                if (!($p === ['auth', 'login'] && $method === 'POST')) {
+                    send_json(503, [
+                        'error' => 'ระบบกำลังปิดปรับปรุงชั่วคราว (Maintenance Mode)',
+                        'maintenance' => true,
+                    ]);
+                }
+            }
+        }
+    }
     auth_routes($db, $method, $p);
     public_routes($db, $method, $p);
     shop_routes($db, $method, $p);

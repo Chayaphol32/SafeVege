@@ -67,15 +67,6 @@ class ApiClient {
     return _decodeJsonResponse(response);
   }
 
-  Future<Uint8List> getBytes(String path) async {
-    final request = http.Request('GET', _uri(path));
-    request.headers.addAll(_headers());
-    final response = await _send(request);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw _errorFromResponse(response);
-    }
-    return response.bodyBytes;
-  }
 
   Future<Map<String, dynamic>> _jsonRequest(
     String method,

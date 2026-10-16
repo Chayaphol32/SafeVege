@@ -138,15 +138,53 @@ class OsmMapService {
     required double endLon,
     TravelMode mode = TravelMode.driving,
   }) async {
-    final uri = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/'
-      '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
-    );
+    // เลือก Routing endpoint ที่ตรงกับโหมดการเดินทางจริง (เดิน/มอเตอร์ไซค์/รถยนต์)
+    final (primaryUrl, fallbackUrl) = switch (mode) {
+      TravelMode.walking => (
+        'https://routing.openstreetmap.de/routed-foot/route/v1/driving/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+        'https://router.project-osrm.org/route/v1/foot/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+      ),
+      TravelMode.motorcycle => (
+        'https://routing.openstreetmap.de/routed-bike/route/v1/driving/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+        'https://router.project-osrm.org/route/v1/bicycle/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+      ),
+      TravelMode.driving => (
+        'https://routing.openstreetmap.de/routed-car/route/v1/driving/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+        'https://router.project-osrm.org/route/v1/driving/'
+            '$startLon,$startLat;$endLon,$endLat?overview=full&geometries=geojson&steps=true',
+      ),
+    };
 
     try {
-      final response = await http
-          .get(uri, headers: {'User-Agent': 'SafeVege/1.0 (FlutterApp)'})
-          .timeout(const Duration(seconds: 7));
+      http.Response response;
+      try {
+        response = await http
+            .get(
+              Uri.parse(primaryUrl),
+              headers: {'User-Agent': 'SafeVege/1.0 (FlutterApp)'},
+            )
+            .timeout(const Duration(seconds: 5));
+        if (response.statusCode != 200) {
+          response = await http
+              .get(
+                Uri.parse(fallbackUrl),
+                headers: {'User-Agent': 'SafeVege/1.0 (FlutterApp)'},
+              )
+              .timeout(const Duration(seconds: 5));
+        }
+      } catch (_) {
+        response = await http
+            .get(
+              Uri.parse(fallbackUrl),
+              headers: {'User-Agent': 'SafeVege/1.0 (FlutterApp)'},
+            )
+            .timeout(const Duration(seconds: 5));
+      }
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -215,17 +253,16 @@ class OsmMapService {
                 );
                 break;
               case TravelMode.motorcycle:
-                // มอเตอร์ไซค์คล่องตัวกว่าในเมือง
-                finalDurationMinutes = (durationSeconds * 0.85 / 60.0)
+                // มอเตอร์ไซค์ใช้เส้นทางลัด/ซอย คล่องตัวกว่ารถยนต์
+                finalDurationMinutes = (durationSeconds * 0.75 / 60.0)
                     .round()
                     .clamp(1, 999);
                 break;
               case TravelMode.walking:
-                // เดินเฉลี่ย 4.8 กม./ชม.
-                finalDurationMinutes = (distKm / 4.8 * 60.0).round().clamp(
-                  1,
-                  999,
-                );
+                // เวลาเดินจริงจาก routing engine หรือคำนวณจากระยะทาง
+                finalDurationMinutes = durationSeconds > 0
+                    ? (durationSeconds / 60.0).round().clamp(1, 999)
+                    : (distKm / 4.8 * 60.0).round().clamp(1, 999);
                 break;
             }
 

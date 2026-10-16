@@ -69,7 +69,10 @@ class _CertificateViewerScreenState extends State<CertificateViewerScreen> {
 
     setState(() => _isOpening = true);
     try {
-      final base = AppConfig.apiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+      final customBase = AppConfig.publicAppBaseUrl?.trim();
+      final base = (customBase != null && customBase.isNotEmpty)
+          ? customBase.replaceFirst(RegExp(r'/+$'), '')
+          : AppConfig.apiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
       final uri = Uri.parse('$base/certificates/$id/file');
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && mounted) {

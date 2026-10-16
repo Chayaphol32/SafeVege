@@ -144,8 +144,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   controller: _baseUrlController,
                   enabled: !_saving,
                   decoration: const InputDecoration(
-                    labelText: 'ที่อยู่เว็บสาธารณะ',
+                    labelText: 'ที่อยู่เว็บสาธารณะ (Public Web Base URL)',
                     hintText: 'https://example.com',
+                    helperText:
+                        'โดเมนเว็บหลักของระบบ SafeVege สำหรับเข้าถึงและเปิดเอกสารสาธารณะ',
                     prefixIcon: Icon(Icons.link_rounded),
                   ),
                 ),

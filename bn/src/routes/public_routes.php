@@ -4,7 +4,40 @@ declare(strict_types=1);
 function public_routes(PDO $db, string $method, array $p): bool {
     if ($method !== 'GET') return false;
     if ($p === ['certificates']) {
-        $certificates = all_rows($db, "SELECT c.id, c.certificate_no, c.issued_at, c.expires_at, s.id AS shop_id, s.name AS shop_name FROM api_certificates c JOIN api_inspection_requests r ON r.id = c.request_id JOIN api_shops s ON s.id = r.shop_id WHERE r.status = 'published' AND c.is_public = 1 AND (c.expires_at IS NULL OR c.expires_at >= CURDATE()) ORDER BY c.issued_at DESC, c.id DESC LIMIT 200");
+        $certificates = all_rows($db, "SELECT c.id, c.certificate_no, c.issued_at, c.expires_at, s.id AS shop_id, s.name AS shop_name, c.request_id FROM api_certificates c JOIN api_inspection_requests r ON r.id = c.request_id JOIN api_shops s ON s.id = r.shop_id WHERE r.status = 'published' AND c.is_public = 1 AND (c.expires_at IS NULL OR c.expires_at >= CURDATE()) ORDER BY c.issued_at DESC, c.id DESC LIMIT 200");
+        if ($certificates) {
+            $certIds = array_map(static fn (array $c): int => (int)$c['id'], $certificates);
+            $placeholders = implode(',', array_fill(0, count($certIds), '?'));
+            $vegRows = all_rows($db, "SELECT cr.certificate_id, ii.vegetable_name FROM api_certificate_results cr JOIN api_inspection_results ir ON ir.id = cr.result_id JOIN api_inspection_request_items ii ON ii.id = ir.request_item_id WHERE cr.certificate_id IN ($placeholders) ORDER BY ii.id", $certIds);
+            $vegetablesByCert = [];
+            foreach ($vegRows as $v) {
+                $cid = (int)$v['certificate_id'];
+                if (!isset($vegetablesByCert[$cid])) $vegetablesByCert[$cid] = [];
+                if (!in_array($v['vegetable_name'], $vegetablesByCert[$cid], true)) {
+                    $vegetablesByCert[$cid][] = $v['vegetable_name'];
+                }
+            }
+            $reqIds = array_unique(array_filter(array_map(static fn (array $c): int => (int)($c['request_id'] ?? 0), $certificates)));
+            $vegetablesByReq = [];
+            if ($reqIds) {
+                $reqPlaceholders = implode(',', array_fill(0, count($reqIds), '?'));
+                $reqVegRows = all_rows($db, "SELECT request_id, vegetable_name FROM api_inspection_request_items WHERE request_id IN ($reqPlaceholders) ORDER BY id", array_values($reqIds));
+                foreach ($reqVegRows as $v) {
+                    $rid = (int)$v['request_id'];
+                    if (!isset($vegetablesByReq[$rid])) $vegetablesByReq[$rid] = [];
+                    if (!in_array($v['vegetable_name'], $vegetablesByReq[$rid], true)) {
+                        $vegetablesByReq[$rid][] = $v['vegetable_name'];
+                    }
+                }
+            }
+            foreach ($certificates as &$cert) {
+                $cid = (int)$cert['id'];
+                $rid = (int)($cert['request_id'] ?? 0);
+                $cert['vegetables'] = $vegetablesByCert[$cid] ?? ($vegetablesByReq[$rid] ?? []);
+                unset($cert['request_id']);
+            }
+            unset($cert);
+        }
         send_json(200, ['data' => $certificates]);
     }
     if (($p[0] ?? '') !== 'shops') return false;

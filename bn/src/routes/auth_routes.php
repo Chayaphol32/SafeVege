@@ -44,6 +44,13 @@ function auth_routes(PDO $db, string $method, array $p): bool {
         $stmt->execute([required_string($body, 'username', 100)]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_string($body['password'] ?? null) || !$user || (int)$user['is_active'] !== 1 || !password_verify($body['password'], $user['password_hash'])) throw new ApiError(401, 'Invalid credentials');
+                $maintRow = all_rows($db, "SELECT setting_value FROM api_app_settings WHERE setting_key = 'maintenance_mode' LIMIT 1");
+        if ($maintRow) {
+            $maintVal = json_decode((string)$maintRow[0]['setting_value'], true);
+            if (($maintVal === true || $maintVal === 1 || $maintVal === 'true') && !in_array($user['role'] ?? '', ['admin', 'super_admin'], true)) {
+                throw new ApiError(503, 'ระบบกำลังปิดปรับปรุงชั่วคราว (Maintenance Mode)');
+            }
+        }
         $token = issue_token($db, (int)$user['id']);
         unset($user['password_hash']);
         send_json(200, ['token' => $token, 'user' => $user]);

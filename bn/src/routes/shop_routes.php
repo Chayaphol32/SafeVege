@@ -69,5 +69,18 @@ function shop_routes(PDO $db, string $method, array $p): bool {
         $request['certificates'] = all_rows($db, 'SELECT id, certificate_no, issued_at, expires_at FROM api_certificates WHERE request_id = ? ORDER BY issued_at DESC', [(int)$p[2]]);
         send_json(200, ['data' => $request]);
     }
+        if (($p === ['my', 'account', 'delete'] && ($method === 'POST' || $method === 'DELETE')) || ($p === ['my', 'account'] && $method === 'DELETE')) {
+        $db->beginTransaction();
+        try {
+            run_sql($db, 'UPDATE api_shops SET is_public = 0 WHERE owner_user_id = ?', [$userId]);
+            run_sql($db, 'UPDATE api_users SET is_active = 0 WHERE id = ?', [$userId]);
+            run_sql($db, 'DELETE FROM api_api_tokens WHERE user_id = ?', [$userId]);
+            $db->commit();
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $error;
+        }
+        send_json(200, ['message' => 'ลบบัญชีและออกจากระบบเรียบร้อยแล้ว']);
+    }
     return false;
 }

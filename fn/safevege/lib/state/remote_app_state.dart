@@ -425,6 +425,10 @@ class AppState extends ChangeNotifier {
     }
     final settings = await _repository.getAdminSettings();
     _adminSettings = {...settings};
+    final pubUrl = _adminSettings['public_app_base_url']?.toString().trim();
+    if (pubUrl != null && pubUrl.isNotEmpty) {
+      AppConfig.publicAppBaseUrl = pubUrl;
+    }
     notifyListeners();
     return Map.unmodifiable(_adminSettings);
   }
@@ -435,6 +439,10 @@ class AppState extends ChangeNotifier {
     }
     await _repository.updateAdminSettings(values);
     _adminSettings = {..._adminSettings, ...values};
+    final pubUrl = _adminSettings['public_app_base_url']?.toString().trim();
+    if (pubUrl != null && pubUrl.isNotEmpty) {
+      AppConfig.publicAppBaseUrl = pubUrl;
+    }
     notifyListeners();
   }
 
@@ -458,8 +466,6 @@ class AppState extends ChangeNotifier {
     return List.unmodifiable(_auditEvents);
   }
 
-  Future<Uint8List> downloadCertificate(String certificateId) =>
-      _repository.downloadCertificate(certificateId);
 
   Future<void> loadMyRequests() async {
     _isLoading = true;
@@ -650,11 +656,16 @@ class AppState extends ChangeNotifier {
           'ใบรับรองใช้ได้เมื่อมีผักอย่างน้อยหนึ่งรายการผ่านผลตรวจ',
         );
       }
+      final issued = certificateIssuedAt ?? DateTime.now();
+      final expiryDays =
+          _adminSettings['default_certificate_expiry_days'] as int? ?? 365;
+      final expires =
+          certificateExpiresAt ?? issued.add(Duration(days: expiryDays));
       await _repository.uploadCertificate(
         requestId: requestId,
         certificateNumber: certNumber.trim(),
-        issuedAt: certificateIssuedAt ?? DateTime.now(),
-        expiresAt: certificateExpiresAt,
+        issuedAt: issued,
+        expiresAt: expires,
         resultIds: passingResultIds,
         fileBytes: certificateBytes,
         fileName: certFileName,
