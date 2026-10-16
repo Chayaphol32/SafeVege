@@ -12,6 +12,7 @@ import '../admin/admin_login_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../admin/super_admin_dashboard_screen.dart';
 import '../guest/certificates_hub_tab.dart';
+import '../guest/shop_details_screen.dart';
 import '../welcome_screen.dart';
 
 class AccountPortalTab extends StatelessWidget {
@@ -134,7 +135,7 @@ class AccountPortalTab extends StatelessWidget {
                     else
                       _buildGuestProfileCard(context),
 
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
 
                     // 2. Portals & Access Management (เมื่อยังไม่ได้เข้าสู่ระบบ)
                     if (!isShop && !isAdmin) ...[
@@ -144,7 +145,7 @@ class AccountPortalTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       _buildRolePortalsGroup(context),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 20),
                     ],
 
                     // 3. Verification & Standards Group
@@ -152,14 +153,14 @@ class AccountPortalTab extends StatelessWidget {
                     const SizedBox(height: 10),
                     _buildStandardsGroup(context),
 
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
 
                     // 4. Preferences & Settings Group
                     _buildSectionLabel(context, 'การตั้งค่าระบบ (SETTINGS)'),
                     const SizedBox(height: 10),
                     _buildSettingsGroup(context),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
                     // Footer Branding
                     Center(
@@ -169,19 +170,19 @@ class AccountPortalTab extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                width: 20,
-                                height: 20,
+                                width: 22,
+                                height: 22,
                                 decoration: BoxDecoration(
                                   color: primaryColor.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
                                   Icons.eco_rounded,
-                                  size: 13,
+                                  size: 14,
                                   color: primaryColor,
                                 ),
                               ),
-                              const SizedBox(width: 7),
+                              const SizedBox(width: 8),
                               Text(
                                 'SafeVege • จังหวัดเชียงราย',
                                 style: TextStyle(
@@ -253,7 +254,7 @@ class AccountPortalTab extends StatelessWidget {
     );
   }
 
-  /// Guest Profile Hero Card
+  /// Guest Profile Hero Card with rich quick stats
   Widget _buildGuestProfileCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
@@ -261,6 +262,9 @@ class AccountPortalTab extends StatelessWidget {
     final borderColor = isDark
         ? AppDarkColors.border
         : AppColors.borderOf(context);
+
+    final favoriteCount = appState.favoriteShopIds.length;
+    final certCount = appState.publicCertificates.length;
 
     return Container(
       decoration: BoxDecoration(
@@ -278,7 +282,7 @@ class AccountPortalTab extends StatelessWidget {
             top: -14,
             child: Icon(
               Icons.eco_rounded,
-              size: 96,
+              size: 105,
               color: primaryColor.withOpacity(isDark ? 0.05 : 0.035),
             ),
           ),
@@ -287,14 +291,15 @@ class AccountPortalTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top user info row
                 Row(
                   children: [
                     // Avatar Squircle
                     Stack(
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 54,
+                          height: 54,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
                             gradient: const LinearGradient(
@@ -304,9 +309,7 @@ class AccountPortalTab extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(
-                                  0xFF10B981,
-                                ).withOpacity(0.28),
+                                color: const Color(0xFF10B981).withOpacity(0.28),
                                 blurRadius: 10,
                                 offset: const Offset(0, 3),
                               ),
@@ -315,16 +318,16 @@ class AccountPortalTab extends StatelessWidget {
                           child: const Icon(
                             Icons.person_rounded,
                             color: Colors.white,
-                            size: 28,
+                            size: 30,
                           ),
                         ),
-                        // Online / verified guest green dot
+                        // Online / active guest green dot
                         Positioned(
                           right: -1,
                           bottom: -1,
                           child: Container(
-                            width: 13,
-                            height: 13,
+                            width: 14,
+                            height: 14,
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981),
                               shape: BoxShape.circle,
@@ -346,9 +349,9 @@ class AccountPortalTab extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  'ผู้ใช้ทั่วไป (Guest)',
+                                  'ผู้ใช้ทั่วไป (Guest Mode)',
                                   style: TextStyle(
-                                    fontSize: 16.5,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: isDark
                                         ? AppDarkColors.textPrimary
@@ -362,7 +365,7 @@ class AccountPortalTab extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
-                                  vertical: 3.5,
+                                  vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
                                   color: primaryColor.withOpacity(
@@ -385,9 +388,9 @@ class AccountPortalTab extends StatelessWidget {
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    const SizedBox(width: 5),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'โหมดผู้บริโภค',
+                                      'ผู้บริโภค',
                                       style: TextStyle(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w700,
@@ -399,11 +402,11 @@ class AccountPortalTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
-                            'ค้นหาร้านค้าและดูผลตรวจผักปลอดภัยได้ทันที',
+                            'ค้นหาร้านค้าและดูผลตรวจผักปลอดภัยในเชียงราย',
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               color: isDark
                                   ? AppDarkColors.textSecondary
                                   : AppColors.textSecondaryOf(context),
@@ -415,92 +418,56 @@ class AccountPortalTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Divider(
-                  height: 1,
-                  color: isDark
-                      ? AppDarkColors.borderLight
-                      : AppColors.borderLightOf(context),
-                ),
-                const SizedBox(height: 12),
-                PressableScale(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CertificatesHubTab(appState: appState),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppDarkColors.surfaceElevated
-                          : const Color(0xFFF6FAF6),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDark
-                            ? AppDarkColors.border
-                            : const Color(0xFFE0ECE1),
-                        width: 0.8,
+
+                const SizedBox(height: 16),
+
+                // 3 Interactive Quick Stat Pills
+                Row(
+                  children: [
+                    // Stat 1: Favorites
+                    Expanded(
+                      child: _buildProfileStatItem(
+                        context: context,
+                        icon: Icons.favorite_rounded,
+                        iconColor: const Color(0xFFF43F5E),
+                        title: '$favoriteCount ร้าน',
+                        subtitle: 'ร้านโปรดของฉัน',
+                        onTap: () => _showFavoritesModal(context),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            CupertinoIcons.checkmark_seal_fill,
-                            size: 16,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'ตรวจดูผลแล็บและใบรับรองทั้งหมดในระบบ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppDarkColors.textPrimary
-                                  : AppColors.textPrimaryOf(context),
+                    const SizedBox(width: 8),
+                    // Stat 2: Certificates Hub
+                    Expanded(
+                      child: _buildProfileStatItem(
+                        context: context,
+                        icon: CupertinoIcons.checkmark_seal_fill,
+                        iconColor: const Color(0xFF10B981),
+                        title: '$certCount ใบ',
+                        subtitle: 'ใบรับรองในระบบ',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CertificatesHubTab(appState: appState),
                             ),
-                          ),
-                        ),
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: surfaceColor,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark
-                                  ? AppDarkColors.border
-                                  : const Color(0xFFD6E3D8),
-                              width: 0.6,
-                            ),
-                          ),
-                          child: Icon(
-                            CupertinoIcons.chevron_forward,
-                            size: 13,
-                            color: isDark
-                                ? AppDarkColors.textMuted
-                                : AppColors.textSecondaryOf(context),
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    // Stat 3: 4 Standards
+                    Expanded(
+                      child: _buildProfileStatItem(
+                        context: context,
+                        icon: Icons.verified_user_rounded,
+                        iconColor: const Color(0xFF0284C7),
+                        title: '4 ขั้นตอน',
+                        subtitle: 'มาตรฐานตรวจ',
+                        onTap: () => _showStandardsModal(context),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -510,238 +477,130 @@ class AccountPortalTab extends StatelessWidget {
     );
   }
 
+  /// Compact interactive stat pill inside guest profile card
+  Widget _buildProfileStatItem({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppDarkColors.surfaceElevated
+                : const Color(0xFFF6FAF7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE4),
+              width: 0.8,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 13, color: iconColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? AppDarkColors.textPrimary
+                          : AppColors.textPrimaryOf(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: isDark
+                      ? AppDarkColors.textMuted
+                      : AppColors.textSecondaryOf(context),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Role Portals Group (ร้านค้า & ผู้ดูแลระบบ)
   Widget _buildRolePortalsGroup(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppDarkColors.surface : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark ? AppDarkColors.border : AppColors.borderOf(context),
-          width: 0.8,
-        ),
-        boxShadow: AppShadows.cardOf(context),
-      ),
-      child: Column(
-        children: [
-          // Row 1: สำหรับเกษตรกรและร้านค้า
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF059669), Color(0xFF10B981)],
-                        ),
-                        borderRadius: BorderRadius.circular(13),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.24),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.building_2_fill,
-                        color: Colors.white,
-                        size: 21,
-                      ),
-                    ),
-                    const SizedBox(width: 13),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'สำหรับเกษตรกรและร้านค้า',
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.2,
-                              color: isDark
-                                  ? AppDarkColors.textPrimary
-                                  : AppColors.textPrimaryOf(context),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'ยื่นขอตรวจแปลงผัก รับผลตรวจแล็บ และปักหมุดบนแผนที่',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? AppDarkColors.textSecondary
-                                  : AppColors.textSecondaryOf(context),
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: PressableScale(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ShopLoginScreen(appState: appState),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF059669)],
-                            ),
-                            borderRadius: BorderRadius.circular(13),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF10B981,
-                                ).withOpacity(0.28),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                CupertinoIcons.arrow_right_to_line,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 7),
-                              Text(
-                                'เข้าสู่ระบบร้านค้า',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 4,
-                      child: PressableScale(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ShopRegistrationScreen(appState: appState),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 11),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppDarkColors.surfaceElevated
-                                : const Color(0xFFF4F7F4),
-                            borderRadius: BorderRadius.circular(13),
-                            border: Border.all(
-                              color: isDark
-                                  ? AppDarkColors.border
-                                  : const Color(0xFFDDE6DF),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'สมัครร้านค้า',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? AppDarkColors.textPrimary
-                                    : AppColors.textPrimaryOf(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return Column(
+      children: [
+        // 1. Shop Portal Card
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppDarkColors.surface : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF1E3A2B)
+                  : const Color(0xFFCBE3D3),
+              width: 1,
             ),
+            boxShadow: AppShadows.cardOf(context),
           ),
-
-          Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            color: isDark
-                ? AppDarkColors.borderLight
-                : AppColors.borderLightOf(context),
-          ),
-
-          // Row 2: สำหรับเจ้าหน้าที่และผู้ตรวจสอบ
-          PressableScale(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AdminLoginScreen(appState: appState),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
                   Container(
-                    width: 42,
-                    height: 42,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF334155), Color(0xFF1E293B)],
+                        colors: [Color(0xFF059669), Color(0xFF10B981)],
                       ),
                       borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withOpacity(0.24),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: const Icon(
-                      CupertinoIcons.shield_fill,
-                      color: Color(0xFF94A3B8),
-                      size: 20,
+                      CupertinoIcons.building_2_fill,
+                      color: Colors.white,
+                      size: 21,
                     ),
                   ),
-                  const SizedBox(width: 13),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'สำหรับเจ้าหน้าที่และผู้ตรวจสอบ',
+                          'สำหรับเกษตรกรและร้านค้า',
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.2,
                             color: isDark
@@ -751,76 +610,236 @@ class AccountPortalTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'จัดการคำขอ นัดหมายตรวจแปลง และบันทึกผลแล็บ',
+                          'ยื่นขอตรวจแปลงผัก รับผลตรวจแล็บ และปักหมุดบนแผนที่',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: isDark
                                 ? AppDarkColors.textSecondary
                                 : AppColors.textSecondaryOf(context),
+                            height: 1.3,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppDarkColors.surfaceElevated
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark
-                            ? AppDarkColors.border
-                            : const Color(0xFFCBD5E1),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Admin',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? AppDarkColors.textPrimary
-                                : const Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          CupertinoIcons.chevron_forward,
-                          size: 11,
-                          color: isDark
-                              ? AppDarkColors.textMuted
-                              : AppColors.textMutedOf(context),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShopLoginScreen(appState: appState),
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 42),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.login_rounded, size: 16),
+                      label: const Text(
+                        'เข้าสู่ระบบร้านค้า',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 4,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ShopRegistrationScreen(appState: appState),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: isDark
+                              ? AppDarkColors.border
+                              : const Color(0xFFCBDCD0),
+                        ),
+                        minimumSize: const Size(0, 42),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'สมัครร้านค้า',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppDarkColors.textPrimary
+                              : AppColors.textPrimaryOf(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // 2. Admin & Inspector Portal Card
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppDarkColors.surface : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark
+                  ? AppDarkColors.border
+                  : AppColors.borderOf(context),
+              width: 0.8,
+            ),
+            boxShadow: AppShadows.cardOf(context),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AdminLoginScreen(appState: appState),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF334155), Color(0xFF1E293B)],
+                        ),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.shield_fill,
+                        color: Color(0xFF94A3B8),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'สำหรับเจ้าหน้าที่และผู้ตรวจสอบ',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.2,
+                              color: isDark
+                                  ? AppDarkColors.textPrimary
+                                  : AppColors.textPrimaryOf(context),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'จัดการคำขอ นัดหมายตรวจแปลง และบันทึกผลแล็บ',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDark
+                                  ? AppDarkColors.textSecondary
+                                  : AppColors.textSecondaryOf(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppDarkColors.surfaceElevated
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark
+                              ? AppDarkColors.border
+                              : const Color(0xFFCBD5E1),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Admin',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? AppDarkColors.textPrimary
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Icon(
+                            CupertinoIcons.chevron_forward,
+                            size: 11,
+                            color: isDark
+                                ? AppDarkColors.textMuted
+                                : AppColors.textMutedOf(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   /// Verification & Standards Group
   Widget _buildStandardsGroup(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final certCount = appState.publicCertificates.length;
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppDarkColors.surface : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark ? AppDarkColors.border : AppColors.borderOf(context),
           width: 0.8,
@@ -837,7 +856,8 @@ class AccountPortalTab extends StatelessWidget {
               colors: [Color(0xFF059669), Color(0xFF10B981)],
             ),
             title: 'ผลตรวจแล็บและใบรับรองทั้งหมด',
-            subtitle: 'ค้นหาใบรับรอง QR Code และผลตรวจปลอดภัย',
+            subtitle: 'ค้นหาใบรับรองทางการ ตรวจสอบผลตรวจผักปลอดภัยแบบเรียลไทม์',
+            trailingBadge: certCount > 0 ? '$certCount รายการ' : null,
             onTap: () {
               Navigator.push(
                 context,
@@ -878,15 +898,15 @@ class AccountPortalTab extends StatelessWidget {
                 : AppColors.borderLightOf(context),
           ),
 
-          // Tile 3: เกี่ยวกับ SafeVege และคำแนะนำเริ่มต้นใช้งาน
+          // Tile 3: คู่มือแนะนำเริ่มต้นใช้งาน
           _buildMenuTile(
             context: context,
             icon: CupertinoIcons.sparkles,
             gradient: const LinearGradient(
               colors: [Color(0xFFD97706), Color(0xFFFBBF24)],
             ),
-            title: 'เกี่ยวกับ SafeVege และคู่มือเริ่มต้นใช้งาน',
-            subtitle: 'แนะนำฟีเจอร์เด่น แผนที่ ตรวจสอบสารพิษ และนำทาง',
+            title: 'คู่มือและคำแนะนำเริ่มต้นใช้งาน',
+            subtitle: 'แนะนำฟีเจอร์เด่น แผนที่ ตรวจสารพิษ และระบบนำทาง',
             onTap: () {
               Navigator.push(
                 context,
@@ -909,7 +929,7 @@ class AccountPortalTab extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppDarkColors.surface : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark ? AppDarkColors.border : AppColors.borderOf(context),
           width: 0.8,
@@ -920,7 +940,7 @@ class AccountPortalTab extends StatelessWidget {
         children: [
           // Theme row with segmented control
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -940,16 +960,35 @@ class AccountPortalTab extends StatelessWidget {
                 ),
                 const SizedBox(width: 13),
                 Expanded(
-                  child: Text(
-                    'ธีมการแสดงผล',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.2,
-                      color: isDark
-                          ? AppDarkColors.textPrimary
-                          : AppColors.textPrimaryOf(context),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ธีมการแสดงผล',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.2,
+                          color: isDark
+                              ? AppDarkColors.textPrimary
+                              : AppColors.textPrimaryOf(context),
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        currentMode == ThemeMode.system
+                            ? 'ตามการตั้งค่าระบบ'
+                            : (currentMode == ThemeMode.dark
+                                ? 'โหมดมืด (Dark Mode)'
+                                : 'โหมดสว่าง (Light Mode)'),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark
+                              ? AppDarkColors.textSecondary
+                              : AppColors.textSecondaryOf(context),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
@@ -1029,7 +1068,7 @@ class AccountPortalTab extends StatelessWidget {
                 children: const [
                   Text(
                     'ระบบค้นหาและตรวจสอบร้านค้าผักปลอดสารพิษ จังหวัดเชียงราย '
-                    'พัฒนาด้วย Flutter และ OpenStreetMap',
+                    'พัฒนาด้วย Flutter และ OpenStreetMap เพื่อความปลอดภัยของผู้บริโภค',
                   ),
                 ],
               );
@@ -1052,90 +1091,93 @@ class AccountPortalTab extends StatelessWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return PressableScale(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: gradient,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.2,
-                      color: isDark
-                          ? AppDarkColors.textPrimary
-                          : AppColors.textPrimaryOf(context),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.2,
+                        color: isDark
+                            ? AppDarkColors.textPrimary
+                            : AppColors.textPrimaryOf(context),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark
+                            ? AppDarkColors.textSecondary
+                            : AppColors.textSecondaryOf(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailingBadge != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppDarkColors.surfaceElevated
+                        : const Color(0xFFF1F5F1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    trailingBadge,
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                       color: isDark
-                          ? AppDarkColors.textSecondary
+                          ? AppDarkColors.textMuted
                           : AppColors.textSecondaryOf(context),
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 6),
+              ],
+              Icon(
+                CupertinoIcons.chevron_forward,
+                size: 14,
+                color: isDark
+                    ? AppDarkColors.textMuted
+                    : AppColors.textMutedOf(context),
               ),
-            ),
-            if (trailingBadge != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppDarkColors.surfaceElevated
-                      : const Color(0xFFF1F5F1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  trailingBadge,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppDarkColors.textMuted
-                        : AppColors.textSecondaryOf(context),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
             ],
-            Icon(
-              CupertinoIcons.chevron_forward,
-              size: 14,
-              color: isDark
-                  ? AppDarkColors.textMuted
-                  : AppColors.textMutedOf(context),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1184,6 +1226,206 @@ class AccountPortalTab extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Modern Bottom Sheet Modal for Favorites
+  void _showFavoritesModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final favoriteShops = appState.shops
+        .where((shop) => appState.isFavorite(shop.id))
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? AppDarkColors.surface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF43F5E).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      color: Color(0xFFF43F5E),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ร้านโปรดของฉัน (${favoriteShops.length})',
+                          style: TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.2,
+                            color: isDark
+                                ? AppDarkColors.textPrimary
+                                : AppColors.textPrimaryOf(context),
+                          ),
+                        ),
+                        Text(
+                          'ร้านค้าและแปลงปลูกผักปลอดภัยที่คุณบันทึกไว้',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppDarkColors.textSecondary
+                                : AppColors.textSecondaryOf(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (favoriteShops.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppDarkColors.surfaceElevated
+                        : const Color(0xFFF8FAF7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? AppDarkColors.border
+                          : const Color(0xFFE2EBE4),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.favorite_border_rounded,
+                        size: 40,
+                        color: isDark
+                            ? AppDarkColors.textMuted
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'ยังไม่มีร้านค้าในรายการโปรด',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? AppDarkColors.textPrimary
+                              : AppColors.textPrimaryOf(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'แตะที่ไอคอนหัวใจในหน้ารายละเอียดร้านค้า เพื่อบันทึกเป็นร้านโปรดเข้าถึงง่าย',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppDarkColors.textSecondary
+                              : AppColors.textSecondaryOf(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: favoriteShops.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final shop = favoriteShops[index];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppDarkColors.surfaceElevated
+                              : const Color(0xFFF8FAF7),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark
+                                ? AppDarkColors.border
+                                : const Color(0xFFE2EBE4),
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: buildShopAvatar(
+                            shop: shop,
+                            isDark: isDark,
+                            size: 44,
+                          ),
+                          title: Text(
+                            shop.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${shop.shortArea} • ห่าง ${appState.distanceTextFor(shop)}',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: AppColors.textSecondaryOf(context),
+                            ),
+                          ),
+                          trailing: Icon(
+                            CupertinoIcons.chevron_forward,
+                            size: 14,
+                            color: AppColors.textMutedOf(context),
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ShopDetailsScreen(
+                                  shop: shop,
+                                  appState: appState,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1294,7 +1536,7 @@ class AccountPortalTab extends StatelessWidget {
                 context: ctx,
                 step: '4',
                 title: 'ออกใบรับรองและขึ้นแสดงบนแผนที่',
-                desc: 'ออกตราสัญลักษณ์ QR Code และเปิดแสดงบนแผนที่สาธารณะ',
+                desc: 'ออกตราสัญลักษณ์รับรองความปลอดภัย และเปิดแสดงบนแผนที่สาธารณะ',
                 icon: Icons.verified_rounded,
               ),
               const SizedBox(height: 24),

@@ -319,7 +319,7 @@ class _CertificateViewerScreenState extends State<CertificateViewerScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // QR Verification Banner
+                    // Official Digital Verification Badge
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -336,15 +336,19 @@ class _CertificateViewerScreenState extends State<CertificateViewerScreen> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              color: isDark
+                                  ? const Color(0xFF14281B)
+                                  : const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
-                              Icons.qr_code_2_rounded,
-                              size: 44,
-                              color: Colors.black87,
+                            child: Icon(
+                              Icons.verified_user_rounded,
+                              size: 28,
+                              color: isDark
+                                  ? AppDarkColors.primaryAccent
+                                  : AppColors.primary,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -353,7 +357,7 @@ class _CertificateViewerScreenState extends State<CertificateViewerScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'QR CODE ตรวจสอบความถูกต้อง',
+                                  'การรับรองมาตรฐานทางการ SafeVege',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -361,7 +365,7 @@ class _CertificateViewerScreenState extends State<CertificateViewerScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'สแกนเพื่อตรวจสอบสถานะผลแล็บจริงผ่านฐานข้อมูล SafeVege เชียงราย',
+                                  'บันทึกและตรวจสอบความถูกต้องผ่านฐานข้อมูลกลาง SafeVege เชียงราย',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isDark

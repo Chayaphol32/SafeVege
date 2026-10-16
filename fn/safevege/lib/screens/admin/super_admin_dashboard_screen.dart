@@ -442,13 +442,16 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                               children: [
                                 Text('👑', style: TextStyle(fontSize: 11)),
                                 SizedBox(width: 4),
-                                Text(
-                                  'Super Administrator',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFFDE68A),
-                                    letterSpacing: 0.3,
+                                Flexible(
+                                  child: Text(
+                                    'Super Administrator',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFDE68A),
+                                      letterSpacing: 0.3,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -467,6 +470,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                               color: Colors.white,
                               letterSpacing: -0.3,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -475,6 +480,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                               fontSize: 12.5,
                               color: Colors.white.withOpacity(0.85),
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -484,7 +491,9 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 const SizedBox(height: 16),
                 const Divider(color: Colors.white12, height: 1),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     // Status Pill
                     Container(
@@ -496,26 +505,28 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                         color: Colors.black.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(100),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const PulsingStatusDot(
+                          PulsingStatusDot(
                             color: Color(0xFF4ADE80),
                             size: 8,
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'ออนไลน์ (Live & Active)',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: Color(0xFFE2E8F0),
-                              fontWeight: FontWeight.w500,
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'ออนไลน์ (Active)',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFFE2E8F0),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
                     // Maintenance Pill
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -547,16 +558,19 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                                 : const Color(0xFF86EFAC),
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            maintenanceMode
-                                ? 'โหมดซ่อมบำรุง: เปิดอยู่'
-                                : 'บริการปกติ (Active)',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: maintenanceMode
-                                  ? const Color(0xFFFEE2E2)
-                                  : const Color(0xFFE2E8F0),
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              maintenanceMode
+                                  ? 'ซ่อมบำรุง: เปิดอยู่'
+                                  : 'ระบบปกติ',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: maintenanceMode
+                                    ? const Color(0xFFFEE2E2)
+                                    : const Color(0xFFE2E8F0),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -586,9 +600,12 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
           children: [
             Icon(Icons.analytics_rounded, size: 20, color: AppColors.primary),
             SizedBox(width: 8),
-            Text(
-              'ตัวชี้วัดหลัก SafeVege เชียงราย (KPIs)',
-              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                'ตัวชี้วัดหลัก SafeVege เชียงราย (KPIs)',
+                style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -735,6 +752,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimaryOf(context),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 3),
             Text(
@@ -770,16 +789,19 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bolt_rounded, size: 18, color: Color(0xFF16A34A)),
-              SizedBox(width: 6),
-              Text(
-                'คำสั่งด่วนผู้ดูแลระบบ (Executive Quick Actions)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF15803D),
+              const Icon(Icons.bolt_rounded, size: 18, color: Color(0xFF16A34A)),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'คำสั่งด่วนผู้ดูแลระบบ (Executive Quick Actions)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF15803D),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -920,21 +942,19 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.access_time_rounded,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'ประวัติกิจกรรมความปลอดภัยล่าสุด (Audit Feed)',
-                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold),
-                ),
-              ],
+            const Icon(
+              Icons.access_time_rounded,
+              size: 20,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'ประวัติกิจกรรมความปลอดภัยล่าสุด (Audit Feed)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (appState.auditEvents.isNotEmpty)
               TextButton(
@@ -1035,8 +1055,11 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         timeText,
                         style: TextStyle(
@@ -1083,11 +1106,14 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'สถาปัตยกรรมระบบ & สภาพแวดล้อม',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Expanded(
+                child: Text(
+                  'สถาปัตยกรรมระบบ & สภาพแวดล้อม',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1241,15 +1267,17 @@ class _ExecutiveModuleTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15.5,
-                            ),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15.5,
                           ),
                         ),
                         Container(

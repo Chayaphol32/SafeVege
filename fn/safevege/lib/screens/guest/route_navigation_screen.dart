@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -151,15 +152,7 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
   }
 
   void _startNavigation() {
-    if (_origin == null) {
-      AppFeedback.showError(context, 'กรุณาเลือกจุดเริ่มต้นก่อนเริ่มการนำทาง');
-      return;
-    }
-    setState(() {
-      _isNavigating = true;
-      _currentStepIndex = 0;
-    });
-    AppFeedback.showSuccess(context, 'เริ่มโหมดนำทางแบบเรียลไทม์');
+    _openExternalGoogleMaps();
   }
 
   void _stopNavigation() {
@@ -182,9 +175,13 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
     );
 
     try {
+      final mode = kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication;
       final launched = await launchUrl(
         uri,
-        mode: LaunchMode.externalApplication,
+        mode: mode,
+        webOnlyWindowName: '_blank',
       );
       if (!launched && mounted) {
         await launchUrl(uri, mode: LaunchMode.platformDefault);

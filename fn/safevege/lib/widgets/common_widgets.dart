@@ -626,7 +626,7 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-String _safeVegeEmoji(String name) {
+String safeVegeEmoji(String name) {
   final lower = name.toLowerCase();
   if (lower.contains('สลัด') ||
       lower.contains('กาด') ||
@@ -650,42 +650,93 @@ String _safeVegeEmoji(String name) {
   return '🌱';
 }
 
-/// Curated high quality vegetable, farm, and organic market photos matching SafeVege demo
-String getShopImageUrl(ShopModel shop) {
-  final name = shop.name.toLowerCase();
-  if (name.contains('ริมกก')) {
-    return 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80'; // Fresh vegetable market stall
-  }
-  if (name.contains('บ้านดอย')) {
-    return 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80'; // Crisp green salad lettuce farm
-  }
-  if (name.contains('สุขใจ')) {
-    return 'https://images.unsplash.com/photo-1573246123716-6b1782bfc499?auto=format&fit=crop&w=600&q=80'; // Fresh greens, tomatoes and market produce
-  }
-  final fallbackImages = [
-    'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1573246123716-6b1782bfc499?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=600&q=80',
-  ];
-  return fallbackImages[shop.id.hashCode.abs() % fallbackImages.length];
-}
+String _safeVegeEmoji(String name) => safeVegeEmoji(name);
 
-Widget _buildFallbackImage(bool isDark) {
-  return Container(
-    decoration: BoxDecoration(
-      color: isDark ? const Color(0xFF1B3D2A) : const Color(0xFFE2EFE5),
-    ),
-    child: Center(
-      child: Icon(
-        Icons.eco_rounded,
-        color: isDark ? AppDarkColors.primary : const Color(0xFF10B981),
-        size: 28,
+/// ไอคอนและเครื่องหมายร้านค้า/ฟาร์มมาตรฐาน SafeVege (Organic Botanical Badge)
+Widget buildShopAvatar({
+  required ShopModel shop,
+  required bool isDark,
+  double size = 64,
+}) {
+  final icon = shop.name.contains('ดอย') || shop.name.contains('ฟาร์ม')
+      ? Icons.agriculture_rounded
+      : (shop.name.contains('สวน')
+          ? Icons.park_rounded
+          : Icons.storefront_rounded);
+
+  final radius = BorderRadius.circular(size * 0.28);
+
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? const [Color(0xFF1E3A2B), Color(0xFF10281D)]
+                : const [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+          ),
+          borderRadius: radius,
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF34D399).withOpacity(0.3)
+                : const Color(0xFFA5D6A7),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? Colors.black : const Color(0xFF1B5E20)).withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            size: size * 0.48,
+            color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF0F5A3C),
+          ),
+        ),
       ),
-    ),
+      if (shop.isVerified)
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF13281C) : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: const Icon(
+              CupertinoIcons.checkmark_seal_fill,
+              size: 16,
+              color: Color(0xFF10B981),
+            ),
+          ),
+        ),
+    ],
   );
 }
+
+Widget _buildShopAvatar({
+  required ShopModel shop,
+  required bool isDark,
+  double size = 64,
+}) =>
+    buildShopAvatar(shop: shop, isDark: isDark, size: size);
+
 
 Widget _buildPillAction({
   required String label,
@@ -693,9 +744,12 @@ Widget _buildPillAction({
   required bool isDark,
   required VoidCallback onTap,
 }) {
-  return PressableScale(
-    onTap: onTap,
-    child: Container(
+  return MouseRegion(
+    cursor: SystemMouseCursors.click,
+    child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
       decoration: BoxDecoration(
         color: isDark ? AppDarkColors.surfaceElevated : const Color(0xFFF1F5F2),
@@ -725,7 +779,8 @@ Widget _buildPillAction({
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
 List<Widget> _buildShopTagList(ShopModel shop, bool isDark, {int maxTags = 3}) {
@@ -849,14 +904,16 @@ class MarketplaceShopCard extends StatelessWidget {
         distanceText != null &&
         distanceText != '—' &&
         distanceText!.trim().isNotEmpty;
-    final imageUrl = getShopImageUrl(shop);
     final displayDistance = isRealDistance ? distanceText! : 'ใกล้ฉัน';
 
     final isWide = MediaQuery.sizeOf(context).width >= 650;
 
-    return PressableScale(
-      onTap: onTap,
-      child: Container(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.deferToChild,
+        child: Container(
         decoration: BoxDecoration(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
@@ -875,18 +932,11 @@ class MarketplaceShopCard extends StatelessWidget {
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 1. Photo on left
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 120,
-                      height: 96,
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
-                      ),
-                    ),
+                  // 1. Storefront avatar badge on left
+                  _buildShopAvatar(
+                    shop: shop,
+                    isDark: isDark,
+                    size: 68,
                   ),
                   const SizedBox(width: 14),
 
@@ -985,6 +1035,7 @@ class MarketplaceShopCard extends StatelessWidget {
                             style: FilledButton.styleFrom(
                               backgroundColor: primaryColor,
                               foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 34),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(100),
                               ),
@@ -1043,18 +1094,11 @@ class MarketplaceShopCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Photo
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(13),
-                      child: SizedBox(
-                        width: 105,
-                        height: 90,
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
-                        ),
-                      ),
+                    // Storefront avatar badge on left
+                    _buildShopAvatar(
+                      shop: shop,
+                      isDark: isDark,
+                      size: 56,
                     ),
                     const SizedBox(width: 12),
 
@@ -1170,6 +1214,7 @@ class MarketplaceShopCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 32),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),
                         ),
@@ -1195,6 +1240,7 @@ class MarketplaceShopCard extends StatelessWidget {
                 ),
               ],
             ),
+        ),
       ),
     );
   }
@@ -1228,7 +1274,11 @@ class FeaturedFarmCard extends StatelessWidget {
         ? AppDarkColors.textSecondary
         : AppColors.textSecondaryOf(context);
 
-    final imageUrl = getShopImageUrl(shop);
+    final isRealDistance =
+        distanceText != null &&
+        distanceText != '—' &&
+        distanceText!.trim().isNotEmpty;
+    final displayDistance = isRealDistance ? distanceText! : 'ใกล้ฉัน';
 
     return PressableScale(
       onTap: onTap,
@@ -1261,38 +1311,55 @@ class FeaturedFarmCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Farm/Vegetable Photo with Badges
-            SizedBox(
-              height: 115,
+            // Top Farm Banner Header (Botanical Gradient & Badges)
+            Container(
+              height: 108,
               width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? const [
+                          Color(0xFF163E28),
+                          Color(0xFF1E5235),
+                          Color(0xFF123321),
+                        ]
+                      : const [
+                          Color(0xFF0F5A3C),
+                          Color(0xFF1B7A4E),
+                          Color(0xFF105838),
+                        ],
+                ),
+              ),
               child: Stack(
-                fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, _) => _buildFallbackImage(isDark),
-                  ),
-                  // Dark gradient scrim at the top for badge contrast
+                  // Decorative geometric circles
                   Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 40,
+                    right: -15,
+                    top: -20,
                     child: Container(
+                      width: 85,
+                      height: 85,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.3),
-                            Colors.transparent,
-                          ],
-                        ),
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.06),
                       ),
                     ),
                   ),
-                  // Left Badge: ร้านแนะนำ
+                  Positioned(
+                    right: 35,
+                    bottom: -25,
+                    child: Container(
+                      width: 65,
+                      height: 65,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.04),
+                      ),
+                    ),
+                  ),
+                  // Top Left Badge: ร้านแนะนำ
                   Positioned(
                     top: 8,
                     left: 8,
@@ -1333,7 +1400,7 @@ class FeaturedFarmCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Right Badge: รับรองแล้ว
+                  // Top Right Badge: รับรองแล้ว
                   Positioned(
                     top: 8,
                     right: 8,
@@ -1343,8 +1410,12 @@ class FeaturedFarmCard extends StatelessWidget {
                         vertical: 3.5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F5A3C).withOpacity(0.94),
+                        color: const Color(0xFF052E16).withOpacity(0.85),
                         borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: const Color(0xFF34D399).withOpacity(0.4),
+                          width: 0.8,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.15),
@@ -1372,6 +1443,82 @@ class FeaturedFarmCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  // Store emblem & certified status at bottom of header
+                  Positioned(
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(13),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Icon(
+                              shop.name.contains('ดอย') || shop.name.contains('ฟาร์ม')
+                                  ? Icons.agriculture_rounded
+                                  : (shop.name.contains('สวน')
+                                      ? Icons.park_rounded
+                                      : Icons.storefront_rounded),
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF34D399).withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'SafeVege Certified',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFA7F3D0),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                displayDistance,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

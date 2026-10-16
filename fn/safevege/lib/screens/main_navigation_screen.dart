@@ -35,7 +35,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    // 0: หน้าหลัก, 1: แผนที่, 2: สแกน QR, 3: ใบรับรอง, 4: บัญชี
+    // 0: หน้าหลัก, 1: แผนที่, 2: ใบรับรอง, 3: บัญชี
     switch (widget.initialIndex) {
       case 0:
         _currentIndex = 0;
@@ -48,9 +48,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         break;
       case 3:
         _currentIndex = 3;
-        break;
-      case 4:
-        _currentIndex = 4;
         break;
       default:
         _currentIndex = 1;
@@ -132,7 +129,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       onCategoryChanged: _setSelectedCategory,
                       onOpenMap: () => _setIndex(1),
                       onOpenCertificates: _openCertificates,
-                      onOpenAccount: () => _setIndex(4),
+                      onOpenAccount: () => _setIndex(3),
                     ),
                     // Tab 1: แผนที่
                     ExploreMapTab(
@@ -142,11 +139,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       onCategoryChanged: _setSelectedCategory,
                       onSwitchToFeed: () => _setIndex(0),
                     ),
-                    // Tab 2: สแกน QR
-                    _QrScannerTab(appState: widget.appState),
-                    // Tab 3: ใบรับรองความปลอดภัย
+                    // Tab 2: ใบรับรองความปลอดภัย
                     CertificatesHubTab(appState: widget.appState),
-                    // Tab 4: บัญชีและบทบาท
+                    // Tab 3: บัญชีและบทบาท
                     AccountPortalTab(appState: widget.appState),
                   ],
                 ),
@@ -211,18 +206,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         color: primaryColor,
                       ),
                       label: 'แผนที่',
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(
-                        CupertinoIcons.qrcode_viewfinder,
-                        size: 22,
-                      ),
-                      selectedIcon: Icon(
-                        CupertinoIcons.qrcode_viewfinder,
-                        size: 23,
-                        color: primaryColor,
-                      ),
-                      label: 'สแกน QR',
                     ),
                     NavigationDestination(
                       icon: Badge(
@@ -292,102 +275,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QrScannerTab extends StatelessWidget {
-  const _QrScannerTab({required this.appState});
-
-  final AppState appState;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
-
-    return Scaffold(
-      backgroundColor: isDark ? AppDarkColors.background : AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF13281C) : const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: primaryColor, width: 2),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        CupertinoIcons.qrcode_viewfinder,
-                        size: 90,
-                        color: primaryColor,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'วาง QR Code ในกรอบเพื่อสแกน',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white70 : const Color(0xFF15803D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'สแกน QR Code ตรวจสอบผักปลอดภัย',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0F5A3C),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'สแกน QR Code บนใบรับรองหน้าร้านค้า เพื่อตรวจสอบรายงานผลตรวจสารพิษตกค้างอย่างแม่นยำ',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CertificatesHubTab(appState: appState),
-                    ),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                ),
-                icon: const Icon(CupertinoIcons.doc_text, size: 16),
-                label: const Text('ค้นหาใบรับรองด้วยตนเอง'),
-              ),
-            ],
           ),
         ),
       ),

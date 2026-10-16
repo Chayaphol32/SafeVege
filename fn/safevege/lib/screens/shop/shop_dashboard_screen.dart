@@ -9,7 +9,6 @@ import '../../models/app_models.dart';
 import '../../state/app_state.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/interactive_animations.dart';
-import '../guest/certificate_viewer_screen.dart';
 import 'create_request_screen.dart';
 import 'my_requests_screen.dart';
 import 'request_tracking_screen.dart';
@@ -261,57 +260,135 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
       ),
     );
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      children: [
-        const SizedBox(height: 12),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        // Farm Identity & Welcome Card
-        _buildFarmHeaderCard(shop, certRequest),
-        const SizedBox(height: 14),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 840;
 
-        // Primary Action: Hero Create Request Banner
-        _buildHeroCreateRequestCard(),
-        const SizedBox(height: 16),
+        if (isWide) {
+          return ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column: Profile + Hero Banner + Quick Services
+                  Expanded(
+                    flex: 11,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFarmHeaderCard(shop, certRequest, isDark),
+                        const SizedBox(height: 16),
+                        _buildHeroCreateRequestCard(isDark),
+                        const SizedBox(height: 16),
+                        _buildQuickServicesSection(
+                          shop,
+                          myRequests,
+                          certRequest,
+                          isDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  // Right Column: Upcoming Alert + Status Metrics + Recent Requests
+                  Expanded(
+                    flex: 9,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (upcomingRequest != null) ...[
+                          _buildUpcomingAppointmentCard(
+                            upcomingRequest,
+                            isDark,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildStatusMetricsSection(
+                          totalCount: myRequests.length,
+                          pendingCount: pendingCount,
+                          scheduledCount: scheduledCount,
+                          inProgressCount: inProgressCount,
+                          completedCount: completedCount,
+                          isWide: true,
+                          isDarkOverride: isDark,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildRecentRequestsSection(myRequests, isDark),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+        }
 
-        // Upcoming Appointment Alert Card (if any scheduled or in-progress)
-        if (upcomingRequest != null) ...[
-          _buildUpcomingAppointmentCard(upcomingRequest),
-          const SizedBox(height: 16),
-        ],
-
-        // Interactive Inspection Status Metric Cards (Tap to filter)
-        _buildStatusMetricsSection(
-          totalCount: myRequests.length,
-          pendingCount: pendingCount,
-          scheduledCount: scheduledCount,
-          inProgressCount: inProgressCount,
-          completedCount: completedCount,
-        ),
-        const SizedBox(height: 16),
-
-        // Quick Services for Farmer
-        _buildQuickServicesSection(shop, myRequests, certRequest),
-        const SizedBox(height: 16),
-
-        // Recent Requests Section
-        _buildRecentRequestsSection(myRequests),
-        const SizedBox(height: 20),
-      ],
+        // Mobile / Compact Layout
+        return ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            _buildFarmHeaderCard(shop, certRequest, isDark),
+            const SizedBox(height: 14),
+            _buildHeroCreateRequestCard(isDark),
+            const SizedBox(height: 16),
+            if (upcomingRequest != null) ...[
+              _buildUpcomingAppointmentCard(upcomingRequest, isDark),
+              const SizedBox(height: 16),
+            ],
+            _buildStatusMetricsSection(
+              totalCount: myRequests.length,
+              pendingCount: pendingCount,
+              scheduledCount: scheduledCount,
+              inProgressCount: inProgressCount,
+              completedCount: completedCount,
+              isWide: false,
+              isDarkOverride: isDark,
+            ),
+            const SizedBox(height: 16),
+            _buildQuickServicesSection(
+              shop,
+              myRequests,
+              certRequest,
+              isDark,
+            ),
+            const SizedBox(height: 16),
+            _buildRecentRequestsSection(myRequests, isDark),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
     );
   }
 
   /// Farm Profile & Greeting Header Card
   Widget _buildFarmHeaderCard(
     ShopModel shop,
-    InspectionRequestModel? certRequest,
-  ) {
+    InspectionRequestModel? certRequest, [
+    bool? isDarkOverride,
+  ]) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context),
+        color: isDark ? AppDarkColors.surfaceElevated : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderOf(context), width: 0.8),
-        boxShadow: AppShadows.cardOf(context),
+        border: Border.all(
+          color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE5),
+          width: 0.9,
+        ),
+        boxShadow: isDark
+            ? const [
+                BoxShadow(
+                  color: Colors.black38,
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : AppShadows.cardOf(context),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -320,44 +397,35 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FloatingElement(
-                distance: 3.5,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOf(context).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    Icons.storefront_rounded,
-                    color: AppColors.primaryOf(context),
-                    size: 26,
-                  ),
-                ),
-              ),
+              buildShopAvatar(shop: shop, isDark: isDark, size: 52),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'สวัสดีคุณ ${shop.ownerFirstName} 👋',
+                      'สวัสดีคุณ ${shop.ownerFirstName.isNotEmpty ? shop.ownerFirstName : "เกษตรกร"} 👋',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondaryOf(context),
+                        fontSize: 12.5,
+                        color: isDark
+                            ? AppDarkColors.textSecondary
+                            : AppColors.textSecondaryOf(context),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       shop.name,
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimaryOf(context),
-                        letterSpacing: 0,
+                        fontSize: 17.5,
+                        fontWeight: FontWeight.w900,
+                        color: isDark
+                            ? AppDarkColors.textPrimary
+                            : AppColors.textPrimaryOf(context),
+                        letterSpacing: -0.3,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -365,15 +433,19 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                         Icon(
                           Icons.location_on_outlined,
                           size: 13,
-                          color: AppColors.textMutedOf(context),
+                          color: isDark
+                              ? const Color(0xFF34D399)
+                              : AppColors.primary,
                         ),
                         const SizedBox(width: 3),
                         Expanded(
                           child: Text(
                             'ต.${shop.subDistrict}, อ.${shop.district} จ.${shop.province}',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondaryOf(context),
+                              fontSize: 11.5,
+                              color: isDark
+                                  ? AppDarkColors.textSecondary
+                                  : AppColors.textSecondaryOf(context),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -384,79 +456,152 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   ],
                 ),
               ),
-              StatusBadge(
-                status: shop.isVerified ? 'ผ่านการตรวจ' : 'รอการตรวจ',
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: AppColors.borderLightOf(context)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
+              const SizedBox(width: 8),
+              // Verified / Pending Status Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: shop.isVerified
+                      ? (isDark
+                          ? const Color(0xFF0F3824)
+                          : const Color(0xFFE8F5E9))
+                      : (isDark
+                          ? const Color(0xFF3B2A10)
+                          : const Color(0xFFFEF3C7)),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: shop.isVerified
+                        ? const Color(0xFF10B981).withOpacity(0.4)
+                        : const Color(0xFFF59E0B).withOpacity(0.4),
+                    width: 0.8,
+                  ),
+                ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.eco_rounded,
-                      size: 15,
-                      color: AppColors.primaryOf(context),
+                      shop.isVerified
+                          ? CupertinoIcons.checkmark_seal_fill
+                          : CupertinoIcons.hourglass,
+                      size: 12,
+                      color: shop.isVerified
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFF59E0B),
                     ),
                     const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        'ผักรับรอง ${shop.verifiedVegetables.length} ชนิด',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryOf(context),
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      shop.isVerified ? 'รับรองแล้ว' : 'รอการตรวจ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: shop.isVerified
+                            ? (isDark
+                                ? const Color(0xFF34D399)
+                                : const Color(0xFF0F5A3C))
+                            : (isDark
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFB45309)),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              if (shop.isVerified) ...[
-                InkWell(
-                  onTap: () => _showShopQrSheet(shop, certRequest),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          CupertinoIcons.qrcode,
-                          size: 14,
-                          color: AppColors.primaryOf(context),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Divider(
+            height: 1,
+            color: isDark ? AppDarkColors.border : const Color(0xFFEAEAEA),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1A3324)
+                            : const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF22C55E).withOpacity(0.25),
+                          width: 0.8,
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          'QR หน้าร้าน',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryOf(context),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🌿', style: TextStyle(fontSize: 11)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ผักรับรอง ${shop.verifiedVegetables.length} ชนิด',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? const Color(0xFF4ADE80)
+                                  : const Color(0xFF15803D),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1A2A38)
+                            : const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF0284C7).withOpacity(0.25),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        'รหัสแปลง #${shop.id}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? const Color(0xFF38BDF8)
+                              : const Color(0xFF0284C7),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-              ],
-              InkWell(
+              ),
+              PressableScale(
                 onTap: () => _switchTab(2),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
+                child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1F2922)
+                        : const Color(0xFFF3F6F4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF2E3E33)
+                          : const Color(0xFFE2EBE5),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -465,13 +610,19 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                         'ข้อมูลร้านค้า',
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: AppColors.textSecondaryOf(context),
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppDarkColors.primaryAccent
+                              : AppColors.primary,
                         ),
                       ),
+                      const SizedBox(width: 2),
                       Icon(
-                        Icons.chevron_right,
-                        size: 15,
-                        color: AppColors.textSecondaryOf(context),
+                        CupertinoIcons.chevron_right,
+                        size: 11,
+                        color: isDark
+                            ? AppDarkColors.primaryAccent
+                            : AppColors.primary,
                       ),
                     ],
                   ),
@@ -485,12 +636,43 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
   }
 
   /// Hero CTA Card: Create New Inspection Request
-  Widget _buildHeroCreateRequestCard() {
+  Widget _buildHeroCreateRequestCard([bool? isDarkOverride]) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.heroCard,
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF0E3825), Color(0xFF155337)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : const LinearGradient(
+                colors: [Color(0xFF0A3E2A), Color(0xFF16794D)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: AppShadows.floating,
+        border: Border.all(
+          color: (isDark ? const Color(0xFF22C55E) : const Color(0xFF34D399))
+              .withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? const [
+                BoxShadow(
+                  color: Colors.black45,
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: const Color(0xFF0F5A3C).withOpacity(0.3),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -503,7 +685,7 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
           ),
           borderRadius: BorderRadius.circular(22),
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Expanded(
@@ -512,8 +694,8 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
+                          horizontal: 9,
+                          vertical: 3.5,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.18),
@@ -522,11 +704,7 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: const [
-                            Icon(
-                              Icons.verified_outlined,
-                              size: 12,
-                              color: Colors.white,
-                            ),
+                            Text('🌿', style: TextStyle(fontSize: 11)),
                             SizedBox(width: 4),
                             Text(
                               'มาตรฐานผักปลอดภัย SafeVege',
@@ -539,75 +717,93 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       const Text(
                         'ยื่นขอตรวจแปลงผักใหม่',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       Text(
-                        'ส่งตัวอย่างผักเพื่อตรวจสอบสารตกค้างและรับรองมาตรฐานตรา SafeVege',
+                        'ส่งตัวอย่างผักเพื่อตรวจสอบสารตกค้าง และรับรองมาตรฐานตรา SafeVege ประจำรอบใหม่',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.88),
+                          color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
-                          height: 1.35,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
+                      const SizedBox(height: 15),
+                      PressableScale(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                CreateRequestScreen(appState: widget.appState),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceOf(context),
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x1A000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.add_circle,
-                              size: 16,
-                              color: AppColors.primaryOf(context),
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'เริ่มส่งคำขอตรวจ',
-                              style: TextStyle(
-                                color: AppColors.primaryOf(context),
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark ? const Color(0xFF22C55E) : Colors.white,
+                            borderRadius: BorderRadius.circular(100),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                CupertinoIcons.add_circled_solid,
+                                size: 16,
+                                color: isDark
+                                    ? const Color(0xFF052514)
+                                    : const Color(0xFF0F5A3C),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'เริ่มส่งคำขอตรวจ',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? const Color(0xFF052514)
+                                      : const Color(0xFF0F5A3C),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 68,
+                  height: 68,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withOpacity(0.14),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1.2,
+                    ),
                   ),
                   child: const Icon(
-                    Icons.assignment_add,
+                    CupertinoIcons.doc_checkmark_fill,
                     color: Colors.white,
                     size: 32,
                   ),
@@ -621,7 +817,12 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
   }
 
   /// Highlight card for scheduled or in-progress inspection
-  Widget _buildUpcomingAppointmentCard(InspectionRequestModel request) {
+  Widget _buildUpcomingAppointmentCard(
+    InspectionRequestModel request, [
+    bool? isDarkOverride,
+  ]) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
     final appDate = request.appointmentDate;
     final dateText = appDate != null
         ? '${appDate.day} ${_getThaiMonth(appDate.month)} ${appDate.year + 543} เวลา ${appDate.hour.toString().padLeft(2, '0')}:${appDate.minute.toString().padLeft(2, '0')} น.'
@@ -629,10 +830,23 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+        color: isDark ? const Color(0xFF142E1F) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFB8E6C8), width: 1.2),
-        boxShadow: AppShadows.cardOf(context),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF22C55E).withOpacity(0.4)
+              : const Color(0xFFB8E6C8),
+          width: 1.2,
+        ),
+        boxShadow: isDark
+            ? const [
+                BoxShadow(
+                  color: Colors.black38,
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : AppShadows.cardOf(context),
       ),
       child: Material(
         color: Colors.transparent,
@@ -658,13 +872,17 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryOf(context)
-                                  .withOpacity(0.12),
+                              color: (isDark
+                                      ? const Color(0xFF22C55E)
+                                      : AppColors.primary)
+                                  .withOpacity(0.14),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.calendar_month_rounded,
-                              color: AppColors.primaryOf(context),
+                              color: isDark
+                                  ? const Color(0xFF34D399)
+                                  : AppColors.primary,
                               size: 18,
                             ),
                           ),
@@ -674,8 +892,10 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                               'นัดหมายตรวจแปลงเร็วๆ นี้',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.primaryOf(context),
+                                fontSize: 13.5,
+                                color: isDark
+                                    ? const Color(0xFF34D399)
+                                    : AppColors.primary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -691,9 +911,15 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceOf(context),
+                    color: isDark
+                        ? AppDarkColors.surfaceElevated
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFD6F0E0)),
+                    border: Border.all(
+                      color: isDark
+                          ? AppDarkColors.border
+                          : const Color(0xFFD6F0E0),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,15 +929,19 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                           Icon(
                             Icons.event,
                             size: 14,
-                            color: AppColors.primaryOf(context),
+                            color: isDark
+                                ? const Color(0xFF34D399)
+                                : AppColors.primary,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             dateText,
                             style: TextStyle(
-                              fontSize: 13.5,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primaryOf(context),
+                              color: isDark
+                                  ? AppDarkColors.textPrimary
+                                  : AppColors.primary,
                             ),
                           ),
                         ],
@@ -720,18 +950,16 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.eco_outlined,
-                            size: 14,
-                            color: AppColors.textSecondaryOf(context),
-                          ),
+                          const Text('🌿', style: TextStyle(fontSize: 12)),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'แปลงผักที่นัดตรวจ: ${request.vegetables.join(", ")}',
                               style: TextStyle(
-                                fontSize: 12.5,
-                                color: AppColors.textPrimaryOf(context),
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppDarkColors.textSecondary
+                                    : AppColors.textPrimaryOf(context),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -747,15 +975,19 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                             Icon(
                               Icons.info_outline,
                               size: 14,
-                              color: AppColors.textMutedOf(context),
+                              color: isDark
+                                  ? AppDarkColors.textMuted
+                                  : AppColors.textMutedOf(context),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 request.appointmentNotes!,
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondaryOf(context),
+                                  fontSize: 11.5,
+                                  color: isDark
+                                      ? AppDarkColors.textSecondary
+                                      : AppColors.textSecondaryOf(context),
                                 ),
                               ),
                             ),
@@ -771,30 +1003,36 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'รหัสคำขอ: ${request.id}',
+                        'รหัสคำขอ: #${request.id}',
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: AppColors.textMutedOf(context),
+                          color: isDark
+                              ? AppDarkColors.textMuted
+                              : AppColors.textMutedOf(context),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'ดูรายละเอียด & แผนที่',
+                          'ติดตามการลงพื้นที่',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primaryOf(context),
+                            color: isDark
+                                ? const Color(0xFF34D399)
+                                : AppColors.primary,
                           ),
                         ),
+                        const SizedBox(width: 2),
                         Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 14,
-                          color: AppColors.primaryOf(context),
+                          CupertinoIcons.chevron_right,
+                          size: 12,
+                          color: isDark
+                              ? const Color(0xFF34D399)
+                              : AppColors.primary,
                         ),
                       ],
                     ),
@@ -815,7 +1053,50 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
     required int scheduledCount,
     required int inProgressCount,
     required int completedCount,
+    bool isWide = false,
+    bool? isDarkOverride,
   }) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
+
+    final items = [
+      (
+        label: 'ทั้งหมด',
+        value: '$totalCount',
+        color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
+        icon: CupertinoIcons.square_stack_3d_up,
+        filterIndex: 0,
+      ),
+      (
+        label: 'รอดำเนินการ',
+        value: '$pendingCount',
+        color: AppColors.warning,
+        icon: CupertinoIcons.hourglass,
+        filterIndex: 1,
+      ),
+      (
+        label: 'นัดหมายแล้ว',
+        value: '$scheduledCount',
+        color: AppColors.info,
+        icon: CupertinoIcons.calendar,
+        filterIndex: 2,
+      ),
+      (
+        label: 'กำลังตรวจ',
+        value: '$inProgressCount',
+        color: const Color(0xFF7C3AED),
+        icon: CupertinoIcons.lab_flask,
+        filterIndex: 3,
+      ),
+      (
+        label: 'เสร็จสิ้น',
+        value: '$completedCount',
+        color: AppColors.success,
+        icon: CupertinoIcons.checkmark_seal_fill,
+        filterIndex: 4,
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -826,10 +1107,12 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
               child: Text(
                 'สถานะคำขอตรวจสอบ',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
                   fontSize: 15,
-                  color: AppColors.textPrimaryOf(context),
-                  letterSpacing: 0,
+                  color: isDark
+                      ? AppDarkColors.textPrimary
+                      : AppColors.textPrimaryOf(context),
+                  letterSpacing: -0.2,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -839,59 +1122,55 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
               'แตะเพื่อดูรายการ',
               style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textMutedOf(context),
+                color: isDark
+                    ? AppDarkColors.textMuted
+                    : AppColors.textMutedOf(context),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          child: Row(
-            children: [
-              _buildInteractiveMetricCard(
-                label: 'ทั้งหมด',
-                value: '$totalCount',
-                color: AppColors.textPrimaryOf(context),
-                icon: CupertinoIcons.square_stack_3d_up,
-                filterIndex: 0,
-              ),
-              const SizedBox(width: 8),
-              _buildInteractiveMetricCard(
-                label: 'รอดำเนินการ',
-                value: '$pendingCount',
-                color: AppColors.warning,
-                icon: CupertinoIcons.hourglass,
-                filterIndex: 1,
-              ),
-              const SizedBox(width: 8),
-              _buildInteractiveMetricCard(
-                label: 'นัดหมายแล้ว',
-                value: '$scheduledCount',
-                color: AppColors.info,
-                icon: CupertinoIcons.calendar,
-                filterIndex: 2,
-              ),
-              const SizedBox(width: 8),
-              _buildInteractiveMetricCard(
-                label: 'กำลังตรวจ',
-                value: '$inProgressCount',
-                color: const Color(0xFF7C3AED),
-                icon: CupertinoIcons.lab_flask,
-                filterIndex: 3,
-              ),
-              const SizedBox(width: 8),
-              _buildInteractiveMetricCard(
-                label: 'เสร็จสิ้น',
-                value: '$completedCount',
-                color: AppColors.success,
-                icon: CupertinoIcons.checkmark_seal_fill,
-                filterIndex: 4,
-              ),
-            ],
+        if (isWide)
+          Row(
+            children: items.map((item) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _buildInteractiveMetricCard(
+                    label: item.label,
+                    value: item.value,
+                    color: item.color,
+                    icon: item.icon,
+                    filterIndex: item.filterIndex,
+                    isDark: isDark,
+                  ),
+                ),
+              );
+            }).toList(),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(
+              children: items.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 88,
+                    child: _buildInteractiveMetricCard(
+                      label: item.label,
+                      value: item.value,
+                      color: item.color,
+                      icon: item.icon,
+                      filterIndex: item.filterIndex,
+                      isDark: isDark,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -902,53 +1181,65 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
     required Color color,
     required IconData icon,
     required int filterIndex,
+    required bool isDark,
   }) {
     return PressableScale(
       onPressed: () => _switchTab(1, filterIndex: filterIndex),
       child: Container(
-        width: 90,
         decoration: BoxDecoration(
-          color: AppColors.surfaceOf(context),
+          color: isDark ? AppDarkColors.surfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderOf(context), width: 0.8),
-          boxShadow: AppShadows.cardOf(context),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 14, color: color),
-              ),
-              const SizedBox(height: 6),
-              AnimatedCount(
-                count: int.tryParse(value) ?? 0,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: color,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondaryOf(context),
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          border: Border.all(
+            color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE5),
+            width: 0.9,
           ),
+          boxShadow: isDark
+              ? const [
+                  BoxShadow(
+                    color: Colors.black38,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ]
+              : AppShadows.cardOf(context),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(isDark ? 0.18 : 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 14, color: color),
+            ),
+            const SizedBox(height: 6),
+            AnimatedCount(
+              count: int.tryParse(value) ?? 0,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                color: color,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppDarkColors.textSecondary
+                    : AppColors.textSecondaryOf(context),
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -958,29 +1249,37 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
   Widget _buildQuickServicesSection(
     ShopModel shop,
     List<InspectionRequestModel> myRequests,
-    InspectionRequestModel? certRequest,
-  ) {
+    InspectionRequestModel? certRequest, [
+    bool? isDarkOverride,
+  ]) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'บริการสำหรับร้านค้า',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             fontSize: 15,
-            color: AppColors.textPrimaryOf(context),
-            letterSpacing: 0,
+            color: isDark
+                ? AppDarkColors.textPrimary
+                : AppColors.textPrimaryOf(context),
+            letterSpacing: -0.2,
           ),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
+            // 1. Lab Results & Certificate
             Expanded(
               child: _buildServiceTile(
-                icon: Icons.workspace_premium_outlined,
+                icon: CupertinoIcons.doc_checkmark_fill,
                 title: 'ผลตรวจแล็บ',
                 subtitle: 'และใบรับรอง',
                 color: const Color(0xFF0284C7),
+                isDark: isDark,
                 onTap: () {
                   if (certRequest != null) {
                     Navigator.push(
@@ -999,23 +1298,27 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            // 2. Farm Map & Location
             Expanded(
               child: _buildServiceTile(
-                icon: Icons.qr_code_2_rounded,
-                title: 'QR หน้าร้าน',
-                subtitle: 'ให้ลูกค้าสแกน',
-                color: AppColors.primaryOf(context),
-                onTap: () => _showShopQrSheet(shop, certRequest),
+                icon: CupertinoIcons.map_pin_ellipse,
+                title: 'พิกัดแปลงผัก',
+                subtitle: 'จัดการแผนที่',
+                color: const Color(0xFF10B981),
+                isDark: isDark,
+                onTap: () => _switchTab(2),
               ),
             ),
             const SizedBox(width: 8),
+            // 3. Inspection Requests List
             Expanded(
               child: _buildServiceTile(
-                icon: Icons.pin_drop_outlined,
-                title: 'พิกัดแปลงผัก',
-                subtitle: 'จัดการแผนที่',
-                color: AppColors.secondary,
-                onTap: () => _switchTab(2),
+                icon: CupertinoIcons.square_list_fill,
+                title: 'รายการคำขอ',
+                subtitle: 'ขั้นตอนการตรวจ',
+                color: const Color(0xFF8B5CF6),
+                isDark: isDark,
+                onTap: () => _switchTab(1),
               ),
             ),
           ],
@@ -1029,14 +1332,26 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
     required String title,
     required String subtitle,
     required Color color,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context),
+        color: isDark ? AppDarkColors.surfaceElevated : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderOf(context), width: 0.8),
-        boxShadow: AppShadows.cardOf(context),
+        border: Border.all(
+          color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE5),
+          width: 0.9,
+        ),
+        boxShadow: isDark
+            ? const [
+                BoxShadow(
+                  color: Colors.black38,
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ]
+            : AppShadows.cardOf(context),
       ),
       child: Material(
         color: Colors.transparent,
@@ -1050,10 +1365,10 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withOpacity(isDark ? 0.18 : 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: color, size: 22),
+                  child: Icon(icon, color: color, size: 21),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1061,18 +1376,26 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryOf(context),
+                    color: isDark
+                        ? AppDarkColors.textPrimary
+                        : AppColors.textPrimaryOf(context),
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(
                     fontSize: 10.5,
-                    color: AppColors.textSecondaryOf(context),
+                    color: isDark
+                        ? AppDarkColors.textSecondary
+                        : AppColors.textSecondaryOf(context),
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1083,7 +1406,13 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
   }
 
   /// Recent Requests list
-  Widget _buildRecentRequestsSection(List<InspectionRequestModel> myRequests) {
+  Widget _buildRecentRequestsSection(
+    List<InspectionRequestModel> myRequests, [
+    bool? isDarkOverride,
+  ]) {
+    final isDark =
+        isDarkOverride ?? Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1093,29 +1422,46 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
             Text(
               'คำขอล่าสุด',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 fontSize: 15,
-                color: AppColors.textPrimaryOf(context),
-                letterSpacing: 0,
+                color: isDark
+                    ? AppDarkColors.textPrimary
+                    : AppColors.textPrimaryOf(context),
+                letterSpacing: -0.2,
               ),
             ),
-            TextButton(
-              onPressed: () => _switchTab(1),
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              child: Text(
-                'ดูทั้งหมด (${myRequests.length}) >',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.bold,
+            PressableScale(
+              onTap: () => _switchTab(1),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'ดูทั้งหมด (${myRequests.length})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? AppDarkColors.primaryAccent
+                            : AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 11,
+                      color: isDark
+                          ? AppDarkColors.primaryAccent
+                          : AppColors.primary,
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         if (myRequests.isEmpty)
           EmptyStateView(
             title: 'ยังไม่มีคำขอตรวจสอบ',
@@ -1138,23 +1484,47 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceOf(context),
+                color: isDark ? AppDarkColors.surfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.borderOf(context),
-                  width: 0.8,
+                  color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE5),
+                  width: 0.9,
                 ),
-                boxShadow: AppShadows.cardOf(context),
+                boxShadow: isDark
+                    ? const [
+                        BoxShadow(
+                          color: Colors.black38,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ]
+                    : AppShadows.cardOf(context),
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RequestTrackingScreen(request: req),
-                    ),
-                  ),
+                  onTap: () async {
+                    try {
+                      final details =
+                          await widget.appState.loadRequestDetails(req.id);
+                      if (!mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              RequestTrackingScreen(request: details),
+                        ),
+                      );
+                    } catch (_) {
+                      if (!mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RequestTrackingScreen(request: req),
+                        ),
+                      );
+                    }
+                  },
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
@@ -1165,11 +1535,13 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              req.id,
+                              '#${req.id}',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.5,
-                                color: AppColors.primaryOf(context),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: isDark
+                                    ? AppDarkColors.primaryAccent
+                                    : AppColors.primary,
                               ),
                             ),
                             StatusBadge(status: req.status),
@@ -1186,16 +1558,34 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                                 vertical: 2.5,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.accent.withOpacity(0.14),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                veg,
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  color: Color(0xFF1B6A3E),
-                                  fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? const Color(0xFF14281B)
+                                    : const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                  color: const Color(0xFF22C55E).withOpacity(0.3),
+                                  width: 0.8,
                                 ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    safeVegeEmoji(veg),
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    veg,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark
+                                          ? const Color(0xFF4ADE80)
+                                          : const Color(0xFF166534),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           }).toList(),
@@ -1209,12 +1599,16 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                                 children: [
                                   Icon(
                                     hasAppDate
-                                        ? Icons.event_outlined
-                                        : Icons.schedule_outlined,
-                                    size: 13,
+                                        ? CupertinoIcons.calendar
+                                        : CupertinoIcons.clock,
+                                    size: 12.5,
                                     color: hasAppDate
-                                        ? AppColors.primary
-                                        : AppColors.textMutedOf(context),
+                                        ? (isDark
+                                            ? const Color(0xFF34D399)
+                                            : AppColors.primary)
+                                        : (isDark
+                                            ? AppDarkColors.textMuted
+                                            : AppColors.textMutedOf(context)),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -1223,10 +1617,14 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: hasAppDate
-                                            ? AppColors.primary
-                                            : AppColors.textSecondaryOf(
-                                                context,
-                                              ),
+                                            ? (isDark
+                                                ? const Color(0xFF34D399)
+                                                : AppColors.primary)
+                                            : (isDark
+                                                ? AppDarkColors.textSecondary
+                                                : AppColors.textSecondaryOf(
+                                                    context,
+                                                  )),
                                         fontWeight: hasAppDate
                                             ? FontWeight.bold
                                             : FontWeight.normal,
@@ -1246,14 +1644,19 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
                                   'ดูรายละเอียด',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.primaryOf(context),
-                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppDarkColors.primaryAccent
+                                        : AppColors.primary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                const SizedBox(width: 2),
                                 Icon(
-                                  Icons.chevron_right,
-                                  size: 16,
-                                  color: AppColors.primaryOf(context),
+                                  CupertinoIcons.chevron_right,
+                                  size: 11,
+                                  color: isDark
+                                      ? AppDarkColors.primaryAccent
+                                      : AppColors.primary,
                                 ),
                               ],
                             ),
@@ -1269,322 +1672,4 @@ class _ShopDashboardScreenState extends State<ShopDashboardScreen> {
       ],
     );
   }
-
-  /// Show beautiful QR Code and Certificate modal sheet
-  void _showShopQrSheet(ShopModel shop, InspectionRequestModel? certRequest) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceOf(context),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/safevege_logo.png',
-                    width: 24,
-                    height: 24,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'QR Code ประจำร้านค้า SafeVege',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppColors.primaryOf(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                shop.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryOf(context),
-                ),
-              ),
-              Text(
-                'ให้ผู้บริโภคสแกนเพื่อตรวจสอบผลความปลอดภัยและตราสัญลักษณ์',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  color: AppColors.textSecondaryOf(context),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-
-              // Simulated Clean QR Code Widget
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceOf(context),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.borderOf(context),
-                    width: 1.2,
-                  ),
-                  boxShadow: AppShadows.cardOf(context),
-                ),
-                child: Column(
-                  children: [
-                    // QR codes need a light quiet zone to stay scannable,
-                    // so this inner panel is intentionally white in both themes.
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          _buildQrPattern(),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.eco_rounded,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'ID ร้าน: ${shop.id} • ${shop.shortArea}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMutedOf(context),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Certified Veggies Chips
-              if (shop.verifiedVegetables.isNotEmpty) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'ผักที่ผ่านการรับรองความปลอดภัย:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimaryOf(context),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: shop.verifiedVegetables.map((v) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.successBgOf(context),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '🌿 $v',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Certificate Action Buttons
-              if (certRequest != null && certRequest.hasCertificate) ...[
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CertificateViewerScreen(
-                          shopName: certRequest.shopName,
-                          certNumber:
-                              certRequest.certificateNumber ??
-                              'SV-CERT-${certRequest.id}',
-                          certificateId: certRequest.certificateId,
-                          vegetables: certRequest.vegetables,
-                          certificateFileName: certRequest.certificateFileName,
-                          issueDate: certRequest.inspectionDate,
-                          expiryDate: certRequest.certificateExpiryDate,
-                          inspectorName: certRequest.inspectorName,
-                        ),
-                      ),
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size(double.infinity, 44),
-                  ),
-                  icon: const Icon(Icons.workspace_premium_rounded, size: 18),
-                  label: const Text('เปิดดูใบรับรองผลตรวจฉบับเต็ม'),
-                ),
-                const SizedBox(height: 8),
-              ],
-              OutlinedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 40),
-                ),
-                child: const Text('ปิดหน้าต่าง'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  /// Visual QR pattern simulating genuine QR Matrix
-  Widget _buildQrPattern() {
-    return SizedBox(
-      width: 170,
-      height: 170,
-      child: CustomPaint(painter: _QrMatrixPainter()),
-    );
-  }
-}
-
-class _QrMatrixPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintDark = Paint()..color = const Color(0xFF141915);
-    final paintLight = Paint()..color = Colors.white;
-
-    final cellWidth = size.width / 21;
-    final cellHeight = size.height / 21;
-
-    void drawFinder(double x, double y) {
-      // Outer 7x7 dark square
-      canvas.drawRect(
-        Rect.fromLTWH(
-          x * cellWidth,
-          y * cellHeight,
-          7 * cellWidth,
-          7 * cellHeight,
-        ),
-        paintDark,
-      );
-      // Inner 5x5 white square
-      canvas.drawRect(
-        Rect.fromLTWH(
-          (x + 1) * cellWidth,
-          (y + 1) * cellHeight,
-          5 * cellWidth,
-          5 * cellHeight,
-        ),
-        paintLight,
-      );
-      // Center 3x3 dark square
-      canvas.drawRect(
-        Rect.fromLTWH(
-          (x + 2) * cellWidth,
-          (y + 2) * cellHeight,
-          3 * cellWidth,
-          3 * cellHeight,
-        ),
-        paintDark,
-      );
-    }
-
-    // Draw three corner finders
-    drawFinder(0, 0);
-    drawFinder(14, 0);
-    drawFinder(0, 14);
-
-    // Simulated data dots
-    final matrixData = [
-      0x5A5A,
-      0xA5A5,
-      0x3C3C,
-      0xC3C3,
-      0x6969,
-      0x9696,
-      0x5555,
-      0xAAAA,
-      0x3333,
-      0xCCCC,
-      0x0F0F,
-      0xF0F0,
-      0x55AA,
-      0xAA55,
-    ];
-
-    for (int r = 0; r < 21; r++) {
-      for (int c = 0; c < 21; c++) {
-        // Skip corner finder zones
-        if ((r < 8 && c < 8) || (r < 8 && c > 12) || (r > 12 && c < 8)) {
-          continue;
-        }
-        // Center quiet zone
-        if (r >= 8 && r <= 12 && c >= 8 && c <= 12) {
-          continue;
-        }
-
-        final seed = ((matrixData[r % matrixData.length] >> (c % 16)) & 1) == 1;
-        if (seed || (r + c) % 3 == 0) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(
-                c * cellWidth + 0.5,
-                r * cellHeight + 0.5,
-                cellWidth - 1,
-                cellHeight - 1,
-              ),
-              const Radius.circular(1.5),
-            ),
-            paintDark,
-          );
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

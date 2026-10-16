@@ -1,16 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
+import '../../services/user_location_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/interactive_animations.dart';
 import 'shop_details_screen.dart';
-import 'route_navigation_screen.dart';
 
 class ExploreFeedTab extends StatefulWidget {
   const ExploreFeedTab({
@@ -40,6 +41,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
   String get _searchQuery => widget.searchController.text;
   String get _selectedCategory => widget.selectedCategory;
   Timer? _searchDebounce;
+  bool _isLocating = false;
 
   void _searchChanged(String query) {
     setState(() {});
@@ -88,12 +90,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
         if (!widget.appState.isFavorite(shop.id)) return false;
       } else if (_selectedCategory == 'ใกล้ฉัน') {
         final origin = widget.appState.nearbyOrigin;
-        if (origin == null ||
-            origin.distanceKmTo(
-                  GeoPoint(latitude: shop.latitude, longitude: shop.longitude),
-                ) >
-                5.0) {
-          return false;
+        if (origin != null) {
+          final dist = origin.distanceKmTo(
+            GeoPoint(latitude: shop.latitude, longitude: shop.longitude),
+          );
+          if (dist > 10.0) return false;
         }
       } else if (_selectedCategory != 'ทั้งหมด') {
         final match = shop.verifiedVegetables.any(
@@ -114,10 +115,61 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
     AppFeedback.showSuccess(context, 'ล้างตัวกรองทั้งหมดแล้ว');
   }
 
+  Future<void> _filterNearby() async {
+    widget.onCategoryChanged('ใกล้ฉัน');
+    if (widget.appState.nearbyOrigin == null && !_isLocating) {
+      setState(() => _isLocating = true);
+      try {
+        final location = await const UserLocationService().getCurrentLocation();
+        await widget.appState.loadPublicShops(near: location);
+        if (mounted) {
+          AppFeedback.showSuccess(context, 'อัปเดตตำแหน่งเพื่อแสดงร้านใกล้คุณแล้ว');
+        }
+      } catch (error) {
+        if (mounted) {
+          AppFeedback.showInfo(
+            context,
+            'กำลังแสดงร้านค้าตามพิกัดศูนย์กลางเชียงราย',
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLocating = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _searchDebounce?.cancel();
     super.dispose();
+  }
+
+  Future<void> _openGoogleMaps(ShopModel shop) async {
+    final origin = widget.appState.nearbyOrigin;
+    final originParam = origin != null
+        ? '&origin=${origin.latitude},${origin.longitude}'
+        : '';
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1$originParam&destination=${shop.latitude},${shop.longitude}&travelmode=driving',
+    );
+
+    try {
+      final mode = kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication;
+      final launched = await launchUrl(
+        uri,
+        mode: mode,
+        webOnlyWindowName: '_blank',
+      );
+      if (!launched && mounted) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      if (mounted) {
+        AppFeedback.showError(context, 'ไม่สามารถเปิด Google Maps ได้');
+      }
+    }
   }
 
   void _callShop(ShopModel shop) {
@@ -185,26 +237,6 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
     );
   }
 
-  Widget _buildFallbackHeroImage(bool isDark) {
-    return Container(
-      height: 108,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1C3A28), const Color(0xFF13281C)]
-              : [const Color(0xFFC7EBD2), const Color(0xFFAFE0BE)],
-        ),
-      ),
-      child: const Center(
-        child: Icon(
-          CupertinoIcons.leaf_arrow_circlepath,
-          size: 42,
-          color: Color(0xFF16A34A),
-        ),
-      ),
-    );
-  }
-
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -223,7 +255,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'ตัวกรองการค้นหา',
+                      'ตัวกรองการค้นหาผักปลอดภัย',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
@@ -257,12 +289,152 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
     );
   }
 
+  void _showNotificationsSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppDarkColors.surface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.bell_fill,
+                      color: Color(0xFF10B981),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'ข่าวสารและประกาศ SafeVege',
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _buildNotificationItem(
+                isDark: isDark,
+                icon: Icons.verified_rounded,
+                iconColor: const Color(0xFF10B981),
+                title: 'เผยแพร่ผลตรวจรอบล่าสุดเรียบร้อยแล้ว',
+                desc: 'ผลตรวจสารเคมีตกค้างของแปลงผักในเครือข่ายจังหวัดเชียงรายพร้อมให้ตรวจสอบ',
+                time: 'วันนี้',
+              ),
+              const SizedBox(height: 10),
+              _buildNotificationItem(
+                isDark: isDark,
+                icon: Icons.map_rounded,
+                iconColor: const Color(0xFF0284C7),
+                title: 'เปิดนำทางด้วย Google Maps โดยตรง',
+                desc: 'แตะที่ปุ่มนำทางบนการ์ดร้านค้า เพื่อเปิด Google Maps พาไปยังแปลงผักได้ทันที',
+                time: 'เมื่อวานนี้',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationItem({
+    required bool isDark,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String desc,
+    required String time,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceElevated : const Color(0xFFF8FAF7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppDarkColors.border : const Color(0xFFE2EBE4),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      time,
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  desc,
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     final filteredShops = _getFilteredShops();
     final featuredShops = widget.appState.shops
         .where((s) => s.isVerified)
-        .take(3)
+        .take(4)
         .toList();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -280,6 +452,8 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
         ? AppDarkColors.textSecondary
         : AppColors.textSecondaryOf(context);
 
+    final favCount = widget.appState.favoriteShopIds.length;
+
     return Scaffold(
       backgroundColor: isDark ? AppDarkColors.background : AppColors.background,
       body: SafeArea(
@@ -291,7 +465,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // Top Custom App Bar
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
                     child: Row(
                       children: [
                         // SafeVege Logo & Brand (Clean, premium badge)
@@ -300,12 +474,12 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                width: 44,
-                                height: 44,
-                                padding: const EdgeInsets.all(5.5),
+                                width: 38,
+                                height: 38,
+                                padding: const EdgeInsets.all(4.5),
                                 decoration: BoxDecoration(
                                   color: surfaceElevated,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: primaryColor.withOpacity(
                                       isDark ? 0.3 : 0.18,
@@ -317,7 +491,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                       color: primaryColor.withOpacity(
                                         isDark ? 0.2 : 0.08,
                                       ),
-                                      blurRadius: 10,
+                                      blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
@@ -327,7 +501,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   fit: BoxFit.contain,
                                 ),
                               ),
-                              const SizedBox(width: 11),
+                              const SizedBox(width: 8),
                               Flexible(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,7 +514,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                           child: Text(
                                             'SafeVege',
                                             style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 18,
                                               fontWeight: FontWeight.w900,
                                               color: primaryColor,
                                               letterSpacing: -0.4,
@@ -351,8 +525,8 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                         ),
                                         const SizedBox(width: 4),
                                         Container(
-                                          width: 7,
-                                          height: 7,
+                                          width: 6,
+                                          height: 6,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             color: isDark
@@ -373,7 +547,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                     Text(
                                       'ผักปลอดภัย มั่นใจทุกมื้อ',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 10.5,
                                         color: textSecondary,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -388,62 +562,15 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                         ),
                         const SizedBox(width: 6),
 
-                        // Top Bar Right Controls (Location, Bell badge, User avatar)
+                        // Top Bar Right Controls (Notifications, User avatar)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: surfaceElevated,
-                                borderRadius: BorderRadius.circular(100),
-                                border: Border.all(
-                                  color: isDark
-                                      ? borderColor
-                                      : const Color(0xFFDCE6DF),
-                                  width: 0.8,
-                                ),
-                                boxShadow: AppShadows.cardOf(context),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.location_on_rounded,
-                                    size: 13,
-                                    color: isDark
-                                        ? AppDarkColors.primary
-                                        : AppColors.primary,
-                                  ),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    'เชียงราย',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    CupertinoIcons.chevron_down,
-                                    size: 9.5,
-                                    color: textSecondary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            // Bell with Badge 1
+                            // Bell button with active notifications
                             PressableScale(
-                              onTap: () {
-                                AppFeedback.showInfo(context, 'ไม่มีการแจ้งเตือนใหม่');
-                              },
+                              onTap: () => _showNotificationsSheet(context),
                               child: Container(
-                                padding: const EdgeInsets.all(7),
+                                padding: const EdgeInsets.all(6.5),
                                 decoration: BoxDecoration(
                                   color: surfaceElevated,
                                   shape: BoxShape.circle,
@@ -455,43 +582,37 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   ),
                                   boxShadow: AppShadows.cardOf(context),
                                 ),
-                                child: Badge(
-                                  label: const Text('1'),
-                                  backgroundColor: const Color(0xFFEF4444),
-                                  textStyle: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  child: Icon(
-                                    CupertinoIcons.bell,
-                                    size: 17,
-                                    color: textPrimary,
-                                  ),
+                                child: Icon(
+                                  CupertinoIcons.bell_fill,
+                                  size: 15,
+                                  color: primaryColor,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 5),
                             // Avatar Icon
                             PressableScale(
                               onTap: widget.onOpenAccount,
                               child: Container(
-                                width: 32,
-                                height: 32,
+                                width: 30,
+                                height: 30,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: const Color(0xFF10B981),
-                                    width: 2,
+                                    width: 1.5,
                                   ),
                                   color: isDark
                                       ? const Color(0xFF13281C)
                                       : const Color(0xFFE8F5E9),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Icon(
                                     CupertinoIcons.person_fill,
-                                    size: 18,
-                                    color: Color(0xFF0F5A3C),
+                                    size: 16,
+                                    color: isDark
+                                        ? const Color(0xFF34D399)
+                                        : const Color(0xFF0F5A3C),
                                   ),
                                 ),
                               ),
@@ -506,11 +627,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // Search Bar with Filter Button and Map Pill
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                     child: Container(
                       decoration: BoxDecoration(
                         color: surfaceElevated,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         boxShadow: isDark
                             ? AppShadows.cardDark
                             : [
@@ -559,7 +680,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                     setState(() {});
                                   },
                                 ),
-                              // Filter Button (deep green squircle)
+                              // Filter Button
                               PressableScale(
                                 onTap: () => _showFilterSheet(context),
                                 child: Container(
@@ -601,7 +722,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                                 Color(0xFF176E48),
                                               ],
                                             ),
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
                                           color: primaryColor.withOpacity(0.25),
@@ -651,12 +772,75 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   ),
                 ),
 
+                // Quick Services Bar (4 Interactive Feature Shortcuts)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: surfaceElevated,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isDark ? borderColor : const Color(0xFFE2ECE4),
+                          width: 0.8,
+                        ),
+                        boxShadow: AppShadows.cardOf(context),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildQuickServiceItem(
+                              context: context,
+                              icon: CupertinoIcons.map_fill,
+                              label: 'แผนที่ร้าน',
+                              color: const Color(0xFF0284C7),
+                              bgColor: isDark ? const Color(0xFF0C2C3D) : const Color(0xFFE0F2FE),
+                              onTap: widget.onOpenMap,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildQuickServiceItem(
+                              context: context,
+                              icon: CupertinoIcons.checkmark_seal_fill,
+                              label: 'ตรวจใบรับรอง',
+                              color: const Color(0xFF10B981),
+                              bgColor: isDark ? const Color(0xFF0F3523) : const Color(0xFFE8F5E9),
+                              onTap: widget.onOpenCertificates,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildQuickServiceItem(
+                              context: context,
+                              icon: Icons.near_me_rounded,
+                              label: 'ร้านใกล้ฉัน',
+                              color: const Color(0xFFF59E0B),
+                              bgColor: isDark ? const Color(0xFF38230A) : const Color(0xFFFEF3C7),
+                              onTap: _filterNearby,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildQuickServiceItem(
+                              context: context,
+                              icon: Icons.favorite_rounded,
+                              label: 'ร้านโปรด',
+                              badgeText: favCount > 0 ? '$favCount' : null,
+                              color: const Color(0xFFE11D48),
+                              bgColor: isDark ? const Color(0xFF3B121B) : const Color(0xFFFFE4E6),
+                              onTap: () => widget.onCategoryChanged('ร้านโปรด'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 // Promo Hero Banner
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                     child: Container(
-                      height: 148,
                       decoration: BoxDecoration(
                         gradient: isDark
                             ? const LinearGradient(
@@ -676,7 +860,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   Color(0xFFCEECD7),
                                 ],
                               ),
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDark ? const Color(0xFF285037) : const Color(0xFFC0E5CC),
                           width: 0.9,
@@ -689,206 +873,136 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                           ),
                         ],
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
                         children: [
-                          // Content Row
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
-                            child: Row(
+                          // Left text column
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Left text column
-                                Expanded(
-                                  flex: 7,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'ค้นหาร้านผักปลอดภัยใกล้คุณ',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w900,
-                                          color: isDark ? Colors.white : const Color(0xFF0D4D31),
-                                          letterSpacing: -0.3,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'ผักสด คุณภาพดี ตรวจสอบได้ เพื่อสุขภาพที่ดีกว่า',
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF236544),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      PressableScale(
-                                        onTap: () => widget.onCategoryChanged('ใกล้ฉัน'),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 5.5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF0F5A3C),
-                                            borderRadius: BorderRadius.circular(100),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withOpacity(0.15),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  'ดูร้านใกล้ฉัน',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 11,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              SizedBox(width: 3),
-                                              Icon(
-                                                CupertinoIcons.chevron_right,
-                                                size: 10,
-                                                color: Colors.white,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                Text(
+                                  'ค้นหาร้านผักปลอดภัยใกล้คุณ',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : const Color(0xFF0D4D31),
+                                    letterSpacing: -0.3,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 8),
-                                // Right Vegetable crate image with floating badge
-                                Expanded(
-                                  flex: 5,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(14),
-                                        child: Image.network(
-                                          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=450&q=80',
-                                          height: 105,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (ctx, err, _) => _buildFallbackHeroImage(isDark),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'ผักสด คุณภาพดี ตรวจสอบได้ เพื่อสุขภาพที่ดีกว่า',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF236544),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 10),
+                                PressableScale(
+                                  onTap: _filterNearby,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0F5A3C),
+                                      borderRadius: BorderRadius.circular(100),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.15),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
                                         ),
-                                      ),
-                                      // Floating Shield Badge
-                                      Positioned(
-                                        right: 4,
-                                        bottom: 10,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.96),
-                                            borderRadius: BorderRadius.circular(9),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withOpacity(0.12),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                CupertinoIcons.checkmark_shield_fill,
-                                                size: 16,
-                                                color: Color(0xFF16A34A),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: const [
-                                                  Text(
-                                                    'ผักปลอดภัย',
-                                                    style: TextStyle(
-                                                      fontSize: 9,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Color(0xFF0F5A3C),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'ตรวจสอบได้',
-                                                    style: TextStyle(
-                                                      fontSize: 8,
-                                                      color: Color(0xFF166534),
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            _isLocating ? 'กำลังค้นหา...' : 'ดูร้านใกล้ฉัน',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          CupertinoIcons.chevron_right,
+                                          size: 10,
+                                          color: Colors.white,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          // Bottom 4 indicator dots
-                          Positioned(
-                            bottom: 6,
-                            left: 0,
-                            right: 0,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          const SizedBox(width: 12),
+                          // Right Shield Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF142E1F)
+                                  : Colors.white.withOpacity(0.92),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF285037) : const Color(0xFFC0E5CC),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(isDark ? 0.2 : 0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width: 14,
-                                  height: 4.5,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF0F5A3C),
-                                    borderRadius: BorderRadius.circular(100),
+                                Icon(
+                                  CupertinoIcons.checkmark_shield_fill,
+                                  size: 26,
+                                  color: isDark
+                                      ? const Color(0xFF34D399)
+                                      : const Color(0xFF16A34A),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'ผักปลอดภัย',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF0F5A3C),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  width: 4.5,
-                                  height: 4.5,
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white30 : const Color(0xFF94D3A8),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  width: 4.5,
-                                  height: 4.5,
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white30 : const Color(0xFF94D3A8),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  width: 4.5,
-                                  height: 4.5,
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white30 : const Color(0xFF94D3A8),
-                                    shape: BoxShape.circle,
+                                Text(
+                                  'ตรวจสอบได้',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -900,11 +1014,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   ),
                 ),
 
-                // Category Selector Carousel (iOS Segmented Pills)
+                // Category Selector Carousel (Segmented Pills)
                 SliverToBoxAdapter(
                   child: Container(
-                    height: 50,
-                    margin: const EdgeInsets.only(top: 6),
+                    height: 48,
+                    margin: const EdgeInsets.only(top: 4),
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       scrollDirection: Axis.horizontal,
@@ -924,8 +1038,8 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
+                                horizontal: 13,
+                                vertical: 7.5,
                               ),
                               decoration: BoxDecoration(
                                 gradient: isSelected
@@ -978,9 +1092,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
-                                    label,
+                                    label == 'ร้านโปรด' && favCount > 0
+                                        ? '$label ($favCount)'
+                                        : label,
                                     style: TextStyle(
-                                      fontSize: 12.5,
+                                      fontSize: 12,
                                       fontWeight: isSelected
                                           ? FontWeight.bold
                                           : FontWeight.w600,
@@ -1014,7 +1130,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 if (_searchQuery.isEmpty && _selectedCategory == 'ทั้งหมด') ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       child: Row(
                         children: [
                           Expanded(
@@ -1029,7 +1145,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                   child: Text(
                                     'ร้านผักปลอดภัยแนะนำ',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 17.5,
                                       fontWeight: FontWeight.bold,
                                       color: textPrimary,
                                     ),
@@ -1073,7 +1189,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 238,
+                      height: 268,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         scrollDirection: Axis.horizontal,
@@ -1105,7 +1221,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // All Stores Section Header
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                     child: Row(
                       children: [
                         Expanded(
@@ -1117,7 +1233,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                                 child: Text(
                                   'ร้านค้าผักปลอดภัย (${filteredShops.length})',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 17.5,
                                     fontWeight: FontWeight.bold,
                                     color: textPrimary,
                                   ),
@@ -1128,9 +1244,9 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
                         if (_searchQuery.isNotEmpty ||
-                            _selectedCategory != 'ทั้งหมด')
+                            _selectedCategory != 'ทั้งหมด') ...[
+                          const SizedBox(width: 6),
                           TextButton(
                             onPressed: _clearFilters,
                             style: TextButton.styleFrom(
@@ -1142,45 +1258,11 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: primaryColor,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: surfaceElevated,
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(
-                                color: isDark
-                                    ? borderColor
-                                    : const Color(0xFFE2EAE3),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'เรียงตาม: ใกล้ฉัน',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 3),
-                                Icon(
-                                  CupertinoIcons.chevron_down,
-                                  size: 11,
-                                  color: textSecondary,
-                                ),
-                              ],
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -1189,6 +1271,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                 // Store Feed List
                 if (filteredShops.isEmpty)
                   SliverToBoxAdapter(
+                    key: const ValueKey('empty_shops_view'),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1208,6 +1291,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   )
                 else
                   SliverPadding(
+                    key: const ValueKey('shops_sliver_list'),
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((ctx, idx) {
@@ -1215,6 +1299,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                         final card = Padding(
                           padding: const EdgeInsets.only(bottom: 14),
                           child: MarketplaceShopCard(
+                            key: ValueKey('shop_card_${shop.id}'),
                             shop: shop,
                             distanceText: widget.appState.distanceTextFor(shop),
                             isFavorite: widget.appState.isFavorite(shop.id),
@@ -1235,15 +1320,7 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                               if (mounted) setState(() {});
                             },
                             onCall: () => _callShop(shop),
-                            onRoute: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      RouteNavigationScreen(shop: shop),
-                                ),
-                              );
-                            },
+                            onRoute: () => _openGoogleMaps(shop),
                           ),
                         );
                         if (idx < 5) {
@@ -1258,6 +1335,91 @@ class _ExploreFeedTabState extends State<ExploreFeedTab> {
                   ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickServiceItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+    String? badgeText,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.12),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(icon, size: 20, color: color),
+                    ),
+                  ),
+                  if (badgeText != null)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppDarkColors.textPrimary
+                      : AppColors.textPrimaryOf(context),
+                ),
+              ),
+            ],
           ),
         ),
       ),

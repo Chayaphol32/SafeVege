@@ -32,6 +32,12 @@ class _InspectionRequestsScreenState extends State<InspectionRequestsScreen> {
   void initState() {
     super.initState();
     _selectedTab = widget.initialTab;
+    _refreshData();
+  }
+
+  Future<void> _refreshData() async {
+    widget.appState.loadAdminRequests().catchError((Object _) {});
+    widget.appState.loadAdminShops().catchError((Object _) {});
   }
 
   @override
@@ -161,16 +167,20 @@ class _InspectionRequestsScreenState extends State<InspectionRequestsScreen> {
                               });
                             },
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
+                        : RefreshIndicator(
+                            onRefresh: _refreshData,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              itemCount: filtered.length,
+                              itemBuilder: (ctx, idx) {
+                                final req = filtered[idx];
+                                return _buildRequestCard(req);
+                              },
                             ),
-                            itemCount: filtered.length,
-                            itemBuilder: (ctx, idx) {
-                              final req = filtered[idx];
-                              return _buildRequestCard(req);
-                            },
                           ),
                   ),
                 ],
@@ -191,143 +201,158 @@ class _InspectionRequestsScreenState extends State<InspectionRequestsScreen> {
     );
   }
 
+  Future<void> _openRequestDetails(InspectionRequestModel req) async {
+    final res = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminRequestDetailsScreen(
+          request: req,
+          appState: widget.appState,
+        ),
+      ),
+    );
+    if (res == true && mounted) {
+      _refreshData();
+    }
+  }
+
   Widget _buildRequestCard(InspectionRequestModel req) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  req.id,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppColors.primaryOf(context),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openRequestDetails(req),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    req.id,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppColors.primaryOf(context),
+                    ),
                   ),
-                ),
-                StatusBadge(status: req.status),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              req.shopName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14.5,
+                  StatusBadge(status: req.status),
+                ],
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'รายการผัก (${req.vegetables.length} ชนิด): ${req.vegetables.join(", ")}',
-              style: TextStyle(
-                fontSize: 12.5,
-                color: AppColors.textSecondaryOf(context),
-              ),
-            ),
-            if (req.appointmentDate != null)
+              const SizedBox(height: 6),
               Text(
-                'วันนัดตรวจ: ${req.appointmentDate!.day}/${req.appointmentDate!.month}/${req.appointmentDate!.year + 543}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.primaryOf(context),
+                req.shopName,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                ),
-              )
-            else
-              Text(
-                'ส่งเมื่อ: ${req.submissionDate.day}/${req.submissionDate.month}/${req.submissionDate.year + 543}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMutedOf(context),
+                  fontSize: 14.5,
                 ),
               ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AdminRequestDetailsScreen(
-                            request: req,
-                            appState: widget.appState,
-                          ),
-                        ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      minimumSize: const Size(0, 36),
-                    ),
-                    child: const Text(
-                      'ดูรายละเอียด',
-                      style: TextStyle(fontSize: 12),
-                    ),
+              const SizedBox(height: 4),
+              Text(
+                'รายการผัก (${req.vegetables.length} ชนิด): ${req.vegetables.join(", ")}',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: AppColors.textSecondaryOf(context),
+                ),
+              ),
+              if (req.appointmentDate != null)
+                Text(
+                  'วันนัดตรวจ: ${req.appointmentDate!.day}/${req.appointmentDate!.month}/${req.appointmentDate!.year + 543}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.primaryOf(context),
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              else
+                Text(
+                  'ส่งเมื่อ: ${req.submissionDate.day}/${req.submissionDate.month}/${req.submissionDate.year + 543}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMutedOf(context),
                   ),
                 ),
-                if (req.isPending || req.isScheduled) ...[
-                  const SizedBox(width: 8),
+              const SizedBox(height: 12),
+              Row(
+                children: [
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => InspectionSchedulingScreen(
-                              request: req,
-                              appState: widget.appState,
-                            ),
-                          ),
-                        );
-                      },
-                      style: FilledButton.styleFrom(
+                    child: OutlinedButton(
+                      onPressed: () => _openRequestDetails(req),
+                      style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         minimumSize: const Size(0, 36),
                       ),
-                      icon: const Icon(Icons.event_outlined, size: 14),
-                      label: Text(
-                        req.isScheduled ? 'แก้ไขวันนัด' : 'นัดวันตรวจ',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ),
-                ] else if (req.isInProgress) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => RecordResultScreen(
-                              request: req,
-                              appState: widget.appState,
-                            ),
-                          ),
-                        );
-                      },
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        minimumSize: const Size(0, 36),
-                      ),
-                      icon: const Icon(Icons.verified_outlined, size: 14),
-                      label: const Text(
-                        'บันทึกผลตรวจ',
+                      child: const Text(
+                        'ดูรายละเอียด',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
+                  if (req.isPending || req.isScheduled) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final res = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => InspectionSchedulingScreen(
+                                request: req,
+                                appState: widget.appState,
+                              ),
+                            ),
+                          );
+                          if (res == true && mounted) {
+                            _refreshData();
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          minimumSize: const Size(0, 36),
+                        ),
+                        icon: const Icon(Icons.event_outlined, size: 14),
+                        label: Text(
+                          req.isScheduled ? 'แก้ไขวันนัด' : 'นัดวันตรวจ',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ] else if (req.isInProgress) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final res = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RecordResultScreen(
+                                request: req,
+                                appState: widget.appState,
+                              ),
+                            ),
+                          );
+                          if (res == true && mounted) {
+                            _refreshData();
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          minimumSize: const Size(0, 36),
+                        ),
+                        icon: const Icon(Icons.verified_outlined, size: 14),
+                        label: const Text(
+                          'บันทึกผลตรวจ',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
