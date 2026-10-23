@@ -29,8 +29,8 @@ if (can_change_last_super_admin(1, 'super_admin', true, ['role' => 'admin'])) {
 if (can_change_last_super_admin(1, 'super_admin', true, ['is_active' => false])) {
     throw new RuntimeException('the only super admin could be deactivated');
 }
-if (!can_change_last_super_admin(2, 'super_admin', true, ['role' => 'admin'])) {
-    throw new RuntimeException('a super admin could not be changed when another remains');
+if (can_change_last_super_admin(2, 'super_admin', true, ['role' => 'admin'])) {
+    throw new RuntimeException('a super admin account could still be changed');
 }
 if (!can_change_last_super_admin(1, 'admin', true, ['role' => 'super_admin'])) {
     throw new RuntimeException('an inspector could not be promoted');

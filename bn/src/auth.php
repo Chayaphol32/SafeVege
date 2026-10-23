@@ -38,6 +38,7 @@ function can_change_last_super_admin(
     bool $targetIsActive,
     array $changes,
 ): bool {
+    if ($targetRole === 'super_admin') return false;
     if ($targetRole !== 'super_admin' || !$targetIsActive) return true;
     $nextRole = $changes['role'] ?? $targetRole;
     $nextIsActive = array_key_exists('is_active', $changes)

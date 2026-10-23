@@ -68,6 +68,27 @@ void main() {
     },
   );
 
+  testWidgets(
+    'certificate navigation does not show a badge when the directory is empty',
+    (WidgetTester tester) async {
+      final appState = _emptyApiState();
+      addTearDown(appState.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(home: MainNavigationScreen(appState: appState)),
+      );
+      await tester.pumpAndSettle();
+
+      final visibleBadges = tester
+          .widgetList<Badge>(find.byType(Badge))
+          .where((badge) => badge.isLabelVisible)
+          .toList();
+
+      expect(visibleBadges, isEmpty);
+      expect(find.text('2'), findsNothing);
+    },
+  );
+
   testWidgets('shop login has blank credentials and no demo access', (
     WidgetTester tester,
   ) async {
@@ -206,4 +227,5 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
 }

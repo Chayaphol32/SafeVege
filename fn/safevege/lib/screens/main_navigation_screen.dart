@@ -107,6 +107,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
+    final certificateCount = widget.appState.publicCertificates.length;
 
     return Scaffold(
       backgroundColor: isDark ? AppDarkColors.background : AppColors.background,
@@ -209,12 +210,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                     NavigationDestination(
                       icon: Badge(
-                        isLabelVisible: true,
-                        label: Text(
-                          widget.appState.publicCertificates.isNotEmpty
-                              ? '${widget.appState.publicCertificates.length}'
-                              : '2',
-                        ),
+                        isLabelVisible: certificateCount > 0,
+                        label: certificateCount > 0
+                            ? Text('$certificateCount')
+                            : null,
                         backgroundColor: primaryColor,
                         textStyle: const TextStyle(
                           fontSize: 10,
@@ -226,12 +225,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         ),
                       ),
                       selectedIcon: Badge(
-                        isLabelVisible: true,
-                        label: Text(
-                          widget.appState.publicCertificates.isNotEmpty
-                              ? '${widget.appState.publicCertificates.length}'
-                              : '2',
-                        ),
+                        isLabelVisible: certificateCount > 0,
+                        label: certificateCount > 0
+                            ? Text('$certificateCount')
+                            : null,
                         backgroundColor: primaryColor,
                         textStyle: const TextStyle(
                           fontSize: 10,

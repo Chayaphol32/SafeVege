@@ -157,6 +157,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         itemBuilder: (context, index) {
           final user = appState.adminUsers[index];
           final isCurrentUser = user.username == appState.username;
+          final isSuperAdminAccount = user.role == UserRole.superAdmin;
+          final canEditUser = !isCurrentUser && !isSuperAdminAccount;
 
           return Card(
             child: ListTile(
@@ -180,10 +182,14 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      tooltip: isCurrentUser
-                          ? 'ไม่สามารถเปลี่ยนรหัสผ่านตนเองที่นี่'
-                          : 'เปลี่ยนรหัสผ่าน',
-                      onPressed: isCurrentUser ? null : () => _resetPassword(user),
+                      tooltip: isSuperAdminAccount
+                          ? 'บัญชี Super Admin แก้ไขไม่ได้'
+                          : isCurrentUser
+                              ? 'ไม่สามารถเปลี่ยนรหัสผ่านตนเองที่นี่'
+                              : 'เปลี่ยนรหัสผ่าน',
+                      onPressed: canEditUser
+                          ? () => _resetPassword(user)
+                          : null,
                       icon: const Icon(Icons.key_rounded),
                     ),
                     if (_updatingUserId == user.id)
@@ -197,7 +203,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     else
                       Switch(
                         value: user.isActive,
-                        onChanged: isCurrentUser || _updatingUserId != null
+                        onChanged: !canEditUser || _updatingUserId != null
                             ? null
                             : (value) => _toggleActive(user, value),
                       ),

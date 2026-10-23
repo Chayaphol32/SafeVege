@@ -10,6 +10,96 @@ import 'package:safevege/screens/admin/admin_users_screen.dart';
 import 'package:safevege/state/app_state.dart';
 
 void main() {
+  testWidgets('super admin accounts cannot be edited from user management', (
+    WidgetTester tester,
+  ) async {
+    final appState = AppState(
+      apiClient: ApiClient(
+        baseUrl: 'http://localhost/api/v1',
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('/auth/login')) {
+            return http.Response(
+              jsonEncode({
+                'token': 'mock-superadmin-token',
+                'user': {
+                  'id': '1',
+                  'username': 'superadmin',
+                  'role': 'super_admin',
+                  'display_name': 'Super Administrator',
+                  'is_active': true,
+                },
+              }),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('/admin/users') &&
+              request.method == 'GET') {
+            return http.Response(
+              jsonEncode({
+                'data': [
+                  {
+                    'id': '1',
+                    'username': 'superadmin',
+                    'display_name': 'ผู้ดูแลสูงสุด',
+                    'role': 'super_admin',
+                    'is_active': 1,
+                  },
+                  {
+                    'id': '2',
+                    'username': 'second-superadmin',
+                    'display_name': 'ผู้ดูแลสูงสุดสำรอง',
+                    'role': 'super_admin',
+                    'is_active': 1,
+                  },
+                  {
+                    'id': '3',
+                    'username': 'inspector1',
+                    'display_name': 'นายตรวจ ผักดี',
+                    'role': 'admin',
+                    'is_active': 1,
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          return http.Response(
+            '{"data":[]}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      ),
+      sessionStore: MemorySessionStore(),
+    );
+    addTearDown(appState.dispose);
+
+    await appState.loginAdmin('superadmin', 'SuperAdminPass!2026');
+
+    await tester.pumpWidget(
+      MaterialApp(home: AdminUsersScreen(appState: appState)),
+    );
+    await tester.pumpAndSettle();
+
+    final targetTile = find.ancestor(
+      of: find.text('ผู้ดูแลสูงสุดสำรอง'),
+      matching: find.byType(ListTile),
+    );
+    final targetKey = find.descendant(
+      of: targetTile,
+      matching: find.byType(IconButton),
+    );
+    final targetSwitch = find.descendant(
+      of: targetTile,
+      matching: find.byType(Switch),
+    );
+
+    expect(tester.widget<IconButton>(targetKey).onPressed, isNull);
+    expect(tester.widget<Switch>(targetSwitch).onChanged, isNull);
+  });
+
   testWidgets(
     'superadmin reset password requires username confirmation and succeeds without controller disposal crash',
     (WidgetTester tester) async {

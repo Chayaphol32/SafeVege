@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+function admin_users_list_sql(int $limit, int $offset): string {
+    return "SELECT u.id, u.username, u.display_name, u.role, u.is_active, u.created_at FROM api_users u WHERE u.role <> 'shop' OR EXISTS (SELECT 1 FROM api_shops s WHERE s.owner_user_id = u.id) ORDER BY u.id DESC LIMIT $limit OFFSET $offset";
+}
+
 function admin_routes(PDO $db, string $method, array $p): bool {
     if (($p[0] ?? '') !== 'admin') return false;
     $user = current_user($db);
@@ -11,7 +15,7 @@ function admin_routes(PDO $db, string $method, array $p): bool {
         $limit = (int)($_GET['limit'] ?? 200);
         $offset = (int)($_GET['offset'] ?? 0);
         if ($limit < 1 || $limit > 200 || $offset < 0) throw new ApiError(422, 'Invalid pagination');
-        $rows = all_rows($db, "SELECT id, username, display_name, role, is_active, created_at FROM api_users ORDER BY id DESC LIMIT $limit OFFSET $offset");
+        $rows = all_rows($db, admin_users_list_sql($limit, $offset));
         send_json(200, ['data' => $rows]);
     }
     if ($p === ['admin', 'users'] && $method === 'POST') {
@@ -52,6 +56,9 @@ function admin_routes(PDO $db, string $method, array $p): bool {
         $db->beginTransaction();
         try {
             $target = find_row($db, 'SELECT id, role, is_active FROM api_users WHERE id = ? FOR UPDATE', [$targetId]);
+            if ($target['role'] === 'super_admin') {
+                throw new ApiError(409, 'Super admin accounts cannot be edited');
+            }
             if ($targetId === (int)$user['id'] && (($changes['role'] ?? $target['role']) !== 'super_admin' || (array_key_exists('is_active', $changes) && (int)$changes['is_active'] !== 1))) {
                 throw new ApiError(409, 'Use change-password before changing your own super-admin account');
             }
@@ -72,7 +79,10 @@ function admin_routes(PDO $db, string $method, array $p): bool {
         require_super_admin($user);
         $targetId = (int)$p[2];
         if ($targetId === (int)$user['id']) throw new ApiError(409, 'Use change-password for your own account');
-        find_row($db, 'SELECT id FROM api_users WHERE id = ?', [$targetId]);
+        $target = find_row($db, 'SELECT id, role FROM api_users WHERE id = ?', [$targetId]);
+        if ($target['role'] === 'super_admin') {
+            throw new ApiError(409, 'Super admin accounts cannot be edited');
+        }
         $body = json_body();
         $password = required_string($body, 'new_password', 255);
         if (strlen($password) < 12) throw new ApiError(422, 'Password must be at least 12 characters');
