@@ -831,7 +831,50 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  String _message(Object error) => error is ApiException
-      ? error.message
-      : 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองอีกครั้ง';
+  String _message(Object error) {
+    if (error is ApiException) {
+      return localizeErrorMessage(error.message, statusCode: error.statusCode);
+    }
+    return 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองอีกครั้ง';
+  }
+
+  static String localizeErrorMessage(String rawMessage, {int? statusCode}) {
+    final trimmed = rawMessage.trim();
+    final lower = trimmed.toLowerCase();
+
+    if (lower == 'invalid credentials' ||
+        lower.contains('invalid credential') ||
+        lower.contains('invalid password') ||
+        lower.contains('wrong password') ||
+        lower.contains('incorrect password') ||
+        lower.contains('bad credentials')) {
+      return 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+    }
+    if (lower == 'user not found' || lower.contains('user not found')) {
+      return 'ไม่พบชื่อผู้ใช้นี้ในระบบ';
+    }
+    if (lower == 'unauthorized' ||
+        (statusCode == 401 && (lower.isEmpty || lower == 'unauthorized'))) {
+      return 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง';
+    }
+    if (lower == 'forbidden' || statusCode == 403) {
+      return 'คุณไม่มีสิทธิ์ในการดำเนินการนี้';
+    }
+    if (lower.contains('shop with inspection history cannot be deleted')) {
+      return 'ไม่สามารถลบร้านค้าที่มีประวัติการตรวจได้ (เฉพาะ Super Admin เท่านั้น)';
+    }
+    if (lower.contains('account') &&
+        (lower.contains('inactive') ||
+            lower.contains('disabled') ||
+            lower.contains('blocked') ||
+            lower.contains('suspended'))) {
+      return 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+    }
+    if (lower.contains('too many') || statusCode == 429) {
+      return 'เข้าสู่ระบบผิดพลาดหลายครั้ง กรุณารอสักครู่แล้วลองใหม่อีกครั้ง';
+    }
+    return trimmed.isNotEmpty
+        ? trimmed
+        : 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองอีกครั้ง';
+  }
 }

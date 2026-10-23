@@ -97,10 +97,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  SafeVegeInteractiveMap(
-                    height: double.infinity,
-                    isPicker: true,
-                    onLocationPicked: _onPinMoved,
+                  Positioned.fill(
+                    child: SafeVegeInteractiveMap(
+                      isFullScreen: true,
+                      isPicker: true,
+                      onLocationPicked: _onPinMoved,
+                    ),
                   ),
                   Positioned(
                     top: 14,

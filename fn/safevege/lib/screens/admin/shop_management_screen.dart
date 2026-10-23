@@ -18,6 +18,23 @@ class ShopManagementScreen extends StatefulWidget {
 class _ShopManagementScreenState extends State<ShopManagementScreen> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      await widget.appState.loadAdminShops();
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
 
   @override
   void dispose() {
@@ -51,17 +68,25 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
             title: const Text('จัดการร้านค้าทั้งหมด'),
             actions: [
               IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'รีเฟรช',
+                onPressed: _loading ? null : _load,
+              ),
+              IconButton(
                 icon: const Icon(Icons.add_business_outlined),
                 tooltip: 'เพิ่มร้านค้าใหม่',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminShopDetailsScreen(
-                      appState: widget.appState,
-                      isAddMode: true,
+                onPressed: () async {
+                  final created = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminShopDetailsScreen(
+                        appState: widget.appState,
+                        isAddMode: true,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                  if (created == true || mounted) _load();
+                },
               ),
             ],
           ),
@@ -101,141 +126,197 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
 
                   // Shop list
                   Expanded(
-                    child: shops.isEmpty
-                        ? EmptyStateView(
-                            title: 'ยังไม่มีข้อมูลร้านค้าในระบบ',
-                            message: 'ไม่พบร้านค้าที่ตรงกับเงื่อนไขค้นหา หรือยังไม่มีร้านค้าลงทะเบียน',
-                            actionLabel: 'เพิ่มร้านค้าใหม่',
-                            onAction: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => AdminShopDetailsScreen(
-                                  appState: widget.appState,
-                                  isAddMode: true,
-                                ),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            itemCount: shops.length,
-                            itemBuilder: (ctx, idx) {
-                              final shop = shops[idx];
-                              final reqCount = widget.appState.requests
-                                  .where((r) => r.shopId == shop.id)
-                                  .length;
-
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              shop.name,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                    child: _loading && shops.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: shops.isEmpty
+                                ? LayoutBuilder(
+                                    builder: (context, constraints) =>
+                                        SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight: constraints.maxHeight,
+                                        ),
+                                        child: EmptyStateView(
+                                          title: 'ยังไม่มีข้อมูลร้านค้าในระบบ',
+                                          message:
+                                              'ไม่พบร้านค้าที่ตรงกับเงื่อนไขค้นหา หรือยังไม่มีร้านค้าลงทะเบียน',
+                                          actionLabel: 'เพิ่มร้านค้าใหม่',
+                                          onAction: () async {
+                                            final created =
+                                                await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    AdminShopDetailsScreen(
+                                                  appState: widget.appState,
+                                                  isAddMode: true,
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          StatusBadge(
-                                            status: shop.isVerified
-                                                ? 'ผ่านการตรวจ'
-                                                : 'รอรับรอง',
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'เจ้าของ: ${shop.ownerFullName} • โทร: ${shop.phone}',
-                                      ),
-                                      Text(
-                                        '${shop.shortArea} • คำขอตรวจทั้งหมด: $reqCount รายการ',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondaryOf(
-                                            context,
-                                          ),
+                                            );
+                                            if (created == true || mounted) {
+                                              _load();
+                                            }
+                                          },
                                         ),
                                       ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: OutlinedButton.icon(
-                                              onPressed: () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      AdminShopDetailsScreen(
-                                                        shop: shop,
-                                                        appState:
-                                                            widget.appState,
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
+                                    itemCount: shops.length,
+                                    itemBuilder: (ctx, idx) {
+                                      final shop = shops[idx];
+                                      final reqCount = widget.appState.requests
+                                          .where((r) => r.shopId == shop.id)
+                                          .length;
+
+                                      return Card(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      shop.name,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
                                                       ),
+                                                    ),
+                                                  ),
+                                                  StatusBadge(
+                                                    status: shop.isVerified
+                                                        ? 'ผ่านการตรวจ'
+                                                        : 'รอรับรอง',
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                'เจ้าของ: ${shop.ownerFullName} • โทร: ${shop.phone}',
+                                              ),
+                                              Text(
+                                                '${shop.shortArea} • คำขอตรวจทั้งหมด: $reqCount รายการ',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color:
+                                                      AppColors.textSecondaryOf(
+                                                    context,
+                                                  ),
                                                 ),
                                               ),
-                                              style: OutlinedButton.styleFrom(
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                minimumSize: const Size(0, 36),
-                                              ),
-                                              icon: const Icon(
-                                                Icons.visibility_outlined,
-                                                size: 16,
-                                              ),
-                                              label: const Text(
-                                                'ดูรายละเอียด',
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: FilledButton.icon(
-                                              onPressed: () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      AdminShopDetailsScreen(
-                                                        shop: shop,
-                                                        appState:
-                                                            widget.appState,
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: OutlinedButton.icon(
+                                                      onPressed: () async {
+                                                        final res =
+                                                            await Navigator
+                                                                .push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                AdminShopDetailsScreen(
+                                                              shop: shop,
+                                                              appState: widget
+                                                                  .appState,
+                                                            ),
+                                                          ),
+                                                        );
+                                                        if (res == true ||
+                                                            mounted) {
+                                                          _load();
+                                                        }
+                                                      },
+                                                      style: OutlinedButton
+                                                          .styleFrom(
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
+                                                        minimumSize:
+                                                            const Size(0, 36),
                                                       ),
-                                                ),
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .visibility_outlined,
+                                                        size: 16,
+                                                      ),
+                                                      label: const Text(
+                                                        'ดูรายละเอียด',
+                                                        style: TextStyle(
+                                                            fontSize: 12),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: FilledButton.icon(
+                                                      onPressed: () async {
+                                                        final res =
+                                                            await Navigator
+                                                                .push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                AdminShopDetailsScreen(
+                                                              shop: shop,
+                                                              appState: widget
+                                                                  .appState,
+                                                            ),
+                                                          ),
+                                                        );
+                                                        if (res == true ||
+                                                            mounted) {
+                                                          _load();
+                                                        }
+                                                      },
+                                                      style: FilledButton
+                                                          .styleFrom(
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
+                                                        minimumSize:
+                                                            const Size(0, 36),
+                                                      ),
+                                                      icon: const Icon(
+                                                        Icons.edit_outlined,
+                                                        size: 16,
+                                                      ),
+                                                      label: const Text(
+                                                        'แก้ไขร้านค้า',
+                                                        style: TextStyle(
+                                                            fontSize: 12),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              style: FilledButton.styleFrom(
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                minimumSize: const Size(0, 36),
-                                              ),
-                                              icon: const Icon(
-                                                Icons.edit_outlined,
-                                                size: 16,
-                                              ),
-                                              label: const Text(
-                                                'แก้ไขร้านค้า',
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                            ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ],
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
-                            },
                           ),
                   ),
                 ],

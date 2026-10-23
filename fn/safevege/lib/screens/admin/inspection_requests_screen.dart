@@ -32,7 +32,9 @@ class _InspectionRequestsScreenState extends State<InspectionRequestsScreen> {
   void initState() {
     super.initState();
     _selectedTab = widget.initialTab;
-    _refreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _refreshData();
+    });
   }
 
   Future<void> _refreshData() async {

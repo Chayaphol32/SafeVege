@@ -415,7 +415,6 @@ class _RouteNavigationScreenState extends State<RouteNavigationScreen> {
             // Map
             Positioned.fill(
               child: SafeVegeInteractiveMap(
-                height: double.infinity,
                 isFullScreen: true,
                 shops: _isSelectingOrigin ? const [] : [widget.shop],
                 selectedShop: widget.shop,

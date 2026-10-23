@@ -206,8 +206,10 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: widget.height,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final mapWidget = Container(
+      height: widget.isFullScreen ? null : widget.height,
       decoration: BoxDecoration(
         color: const Color(0xFFF2F4F2),
         borderRadius: widget.isFullScreen
@@ -237,66 +239,51 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
             ),
             children: [
               // OpenStreetMap Tile Layer (ฟรี 100% ไม่มีลายน้ำ ไม่ต้องใช้ API Key)
-              if (Theme.of(context).brightness == Brightness.dark)
-                ColorFiltered(
-                  colorFilter: const ColorFilter.matrix(<double>[
-                    -0.2093,
-                    -0.4109,
-                    -0.0798,
-                    0,
-                    180,
-                    -0.2093,
-                    -0.4109,
-                    -0.0798,
-                    0,
-                    195,
-                    -0.2093,
-                    -0.4109,
-                    -0.0798,
-                    0,
-                    185,
-                    0,
-                    0,
-                    0,
-                    1.0,
-                    0,
-                  ]),
-                  child: TileLayer(
-                    urlTemplate: AppConfig.osmTileUrl,
-                    fallbackUrl: AppConfig.osmFallbackTileUrl,
-                    subdomains: const ['a', 'b', 'c'],
-                    userAgentPackageName: 'com.safevege.safevege',
-                    tileProvider: NetworkTileProvider(
-                      headers: <String, String>{
-                        'User-Agent':
-                            'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
-                      },
-                    ),
-                    maxZoom: 19,
-                    errorTileCallback: (tile, error, stackTrace) {
-                      debugPrint(
-                        'SafeVege Map Tile load failed: $tile ($error)',
-                      );
-                    },
-                  ),
-                )
-              else
-                TileLayer(
-                  urlTemplate: AppConfig.osmTileUrl,
-                  fallbackUrl: AppConfig.osmFallbackTileUrl,
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.safevege.safevege',
-                  tileProvider: NetworkTileProvider(
-                    headers: <String, String>{
-                      'User-Agent':
-                          'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
-                    },
-                  ),
-                  maxZoom: 19,
-                  errorTileCallback: (tile, error, stackTrace) {
-                    debugPrint('SafeVege Map Tile load failed: $tile ($error)');
+              TileLayer(
+                urlTemplate: AppConfig.osmTileUrl,
+                fallbackUrl: AppConfig.osmFallbackTileUrl,
+                subdomains: const ['a', 'b', 'c'],
+                userAgentPackageName: 'com.safevege.safevege',
+                tileProvider: NetworkTileProvider(
+                  headers: <String, String>{
+                    'User-Agent':
+                        'SafeVege/1.0 (com.safevege.safevege; mail: info@safevege.app)',
                   },
                 ),
+                maxZoom: 19,
+                tileBuilder: isDark
+                    ? (context, tileWidget, tile) {
+                        return ColorFiltered(
+                          colorFilter: const ColorFilter.matrix(<double>[
+                            -0.2093,
+                            -0.4109,
+                            -0.0798,
+                            0,
+                            180,
+                            -0.2093,
+                            -0.4109,
+                            -0.0798,
+                            0,
+                            195,
+                            -0.2093,
+                            -0.4109,
+                            -0.0798,
+                            0,
+                            185,
+                            0,
+                            0,
+                            0,
+                            1.0,
+                            0,
+                          ]),
+                          child: tileWidget,
+                        );
+                      }
+                    : null,
+                errorTileCallback: (tile, error, stackTrace) {
+                  debugPrint('SafeVege Map Tile load failed: $tile ($error)');
+                },
+              ),
 
               // OSRM Driving Route Polyline Layer
               if (_routePoints.isNotEmpty)
@@ -325,45 +312,49 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
             left: widget.isFullScreen ? 12 : null,
             right: widget.isFullScreen ? null : 12,
             top: widget.isFullScreen ? 150 : 12,
-            child: Column(
-              children: [
-                _buildMapButton(
-                  icon: Icons.add,
-                  tooltip: 'ซูมเข้า',
-                  onTap: () {
-                    final zoom = _mapController.camera.zoom;
-                    _mapController.move(
-                      _mapController.camera.center,
-                      (zoom + 1).clamp(4.0, 19.0),
-                    );
-                  },
-                ),
-                const SizedBox(height: 6),
-                _buildMapButton(
-                  icon: Icons.remove,
-                  tooltip: 'ซูมออก',
-                  onTap: () {
-                    final zoom = _mapController.camera.zoom;
-                    _mapController.move(
-                      _mapController.camera.center,
-                      (zoom - 1).clamp(4.0, 19.0),
-                    );
-                  },
-                ),
-                const SizedBox(height: 6),
-                _buildMapButton(
-                  icon: Icons.my_location_rounded,
-                  tooltip: widget.isPicker
-                      ? 'กลับไปยังตำแหน่งที่เลือก'
-                      : 'จัดแผนที่ให้อยู่ตรงกลาง',
-                  onTap: () => _animateTo(
-                    _centerLatitude,
-                    _centerLongitude,
-                    _initialZoom,
+            child: SizedBox(
+              width: 38,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildMapButton(
+                    icon: Icons.add,
+                    tooltip: 'ซูมเข้า',
+                    onTap: () {
+                      final zoom = _mapController.camera.zoom;
+                      _mapController.move(
+                        _mapController.camera.center,
+                        (zoom + 1).clamp(4.0, 19.0),
+                      );
+                    },
                   ),
-                  color: AppColors.primaryOf(context),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  _buildMapButton(
+                    icon: Icons.remove,
+                    tooltip: 'ซูมออก',
+                    onTap: () {
+                      final zoom = _mapController.camera.zoom;
+                      _mapController.move(
+                        _mapController.camera.center,
+                        (zoom - 1).clamp(4.0, 19.0),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  _buildMapButton(
+                    icon: Icons.my_location_rounded,
+                    tooltip: widget.isPicker
+                        ? 'กลับไปยังตำแหน่งที่เลือก'
+                        : 'จัดแผนที่ให้อยู่ตรงกลาง',
+                    onTap: () => _animateTo(
+                      _centerLatitude,
+                      _centerLongitude,
+                      _initialZoom,
+                    ),
+                    color: AppColors.primaryOf(context),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -373,27 +364,29 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
             bottom: widget.isPicker || (_activeShop != null && !widget.compact)
                 ? 100
                 : 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xCC18201B)
-                    : Colors.white.withOpacity(0.82),
-                borderRadius: BorderRadius.circular(4),
-                border: Theme.of(context).brightness == Brightness.dark
-                    ? Border.all(color: AppDarkColors.border, width: 0.5)
-                    : null,
-              ),
-              child: Text(
-                Theme.of(context).brightness == Brightness.dark
-                    ? '© OpenStreetMap contributors, © CARTO'
-                    : AppConfig.mapAttribution,
-                style: TextStyle(
-                  fontSize: 9.5,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppDarkColors.textSecondary
-                      : AppColors.textSecondaryOf(context),
-                  fontWeight: FontWeight.w500,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xCC18201B)
+                      : Colors.white.withOpacity(0.82),
+                  borderRadius: BorderRadius.circular(4),
+                  border: isDark
+                      ? Border.all(color: AppDarkColors.border, width: 0.5)
+                      : null,
+                ),
+                child: Text(
+                  isDark
+                      ? '© OpenStreetMap contributors, © CARTO'
+                      : AppConfig.mapAttribution,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    color: isDark
+                        ? AppDarkColors.textSecondary
+                        : AppColors.textSecondaryOf(context),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -404,46 +397,48 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
             Positioned(
               top: 12,
               left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppDarkColors.surfaceElevated
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Theme.of(context).brightness == Brightness.dark
-                      ? Border.all(color: AppDarkColors.border, width: 0.8)
-                      : null,
-                  boxShadow: AppShadows.cardOf(context),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppDarkColors.primary
-                            : AppColors.primary,
+              child: IgnorePointer(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppDarkColors.surfaceElevated
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: isDark
+                        ? Border.all(color: AppDarkColors.border, width: 0.8)
+                        : null,
+                    boxShadow: AppShadows.cardOf(context),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: isDark
+                              ? AppDarkColors.primary
+                              : AppColors.primary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'กำลังคำนวณเส้นทาง...',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppDarkColors.textPrimary
-                            : AppColors.textPrimaryOf(context),
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(width: 8),
+                      Text(
+                        'กำลังคำนวณเส้นทาง...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppDarkColors.textPrimary
+                              : AppColors.textPrimaryOf(context),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -509,6 +504,11 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
         ],
       ),
     );
+
+    if (widget.isFullScreen) {
+      return SizedBox.expand(child: mapWidget);
+    }
+    return mapWidget;
   }
 
   List<Marker> _buildMarkers() {
@@ -692,6 +692,8 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
         color ??
         (isDark ? AppDarkColors.textPrimary : AppColors.textPrimaryOf(context));
     return Container(
+      width: 38,
+      height: 38,
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xE61E2822)
@@ -711,7 +713,7 @@ class _SafeVegeInteractiveMapState extends State<SafeVegeInteractiveMap> {
       child: IconButton(
         icon: Icon(icon, color: iconColor, size: 20),
         tooltip: tooltip,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+        constraints: const BoxConstraints.tightFor(width: 38, height: 38),
         padding: EdgeInsets.zero,
         onPressed: onTap,
       ),

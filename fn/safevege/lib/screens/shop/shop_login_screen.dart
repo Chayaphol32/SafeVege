@@ -23,28 +23,78 @@ class _ShopLoginScreenState extends State<ShopLoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _errorMessage;
+  bool _hasPasswordError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController.addListener(_onFieldChanged);
+    _passwordController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (_errorMessage != null || _hasPasswordError) {
+      setState(() {
+        _errorMessage = null;
+        _hasPasswordError = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _usernameController.removeListener(_onFieldChanged);
+    _passwordController.removeListener(_onFieldChanged);
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    if (_usernameController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty && password.isEmpty) {
+      setState(() {
+        _errorMessage = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่านก่อนเข้าสู่ระบบ';
+        _hasPasswordError = true;
+      });
       AppFeedback.showError(
         context,
-        'กรอกชื่อผู้ใช้และรหัสผ่านก่อนเข้าสู่ระบบ',
+        'กรุณากรอกชื่อผู้ใช้และรหัสผ่านก่อนเข้าสู่ระบบ',
       );
       return;
     }
-    setState(() => _isLoading = true);
+
+    if (username.isEmpty) {
+      setState(() {
+        _errorMessage = 'กรุณากรอกชื่อผู้ใช้ก่อนเข้าสู่ระบบ';
+        _hasPasswordError = false;
+      });
+      AppFeedback.showError(context, 'กรุณากรอกชื่อผู้ใช้ก่อนเข้าสู่ระบบ');
+      return;
+    }
+
+    if (password.isEmpty) {
+      setState(() {
+        _errorMessage = 'กรุณากรอกรหัสผ่านก่อนเข้าสู่ระบบ';
+        _hasPasswordError = true;
+      });
+      AppFeedback.showError(context, 'กรุณากรอกรหัสผ่านก่อนเข้าสู่ระบบ');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _hasPasswordError = false;
+    });
+
     try {
       await widget.appState.loginShop(
-        _usernameController.text.trim(),
-        _passwordController.text,
+        username,
+        password,
       );
       if (!mounted) return;
       AppFeedback.showSuccess(context, 'เข้าสู่ระบบร้านค้าสำเร็จ');
@@ -56,10 +106,19 @@ class _ShopLoginScreenState extends State<ShopLoginScreen> {
       );
     } catch (error) {
       if (mounted) {
-        AppFeedback.showError(
-          context,
-          widget.appState.errorMessage ?? error.toString(),
-        );
+        final rawMsg = widget.appState.errorMessage ?? error.toString();
+        final displayMsg = AppState.localizeErrorMessage(rawMsg);
+        final isAuthFailure = displayMsg.contains('รหัสผ่าน') ||
+            displayMsg.contains('ชื่อผู้ใช้') ||
+            rawMsg.toLowerCase().contains('credential');
+
+        setState(() {
+          _errorMessage = displayMsg;
+          _hasPasswordError = isAuthFailure;
+        });
+
+        // แสดงแจ้งเตือนแถบล่าง SnackBar
+        AppFeedback.showError(context, displayMsg);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -137,8 +196,10 @@ class _ShopLoginScreenState extends State<ShopLoginScreen> {
                     color: AppColors.surfaceOf(context),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: AppColors.borderOf(context),
-                      width: 0.8,
+                      color: _errorMessage != null
+                          ? AppColors.danger.withOpacity(0.4)
+                          : AppColors.borderOf(context),
+                      width: _errorMessage != null ? 1.2 : 0.8,
                     ),
                     boxShadow: AppShadows.cardOf(context),
                   ),
@@ -146,8 +207,52 @@ class _ShopLoginScreenState extends State<ShopLoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (_errorMessage != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.danger.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Icon(
+                                  CupertinoIcons.exclamationmark_circle_fill,
+                                  color: AppColors.danger,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(
+                                    color: AppColors.danger,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
                       TextField(
                         controller: _usernameController,
+                        textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
                           labelText: 'ชื่อผู้ใช้',
                           hintText: 'กรอกชื่อผู้ใช้',
@@ -158,9 +263,12 @@ class _ShopLoginScreenState extends State<ShopLoginScreen> {
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _login(),
                         decoration: InputDecoration(
                           labelText: 'รหัสผ่าน',
                           hintText: 'กรอกรหัสผ่าน',
+                          errorText: _hasPasswordError ? 'รหัสผ่านไม่ถูกต้อง' : null,
                           prefixIcon: const Icon(CupertinoIcons.lock, size: 20),
                           suffixIcon: IconButton(
                             icon: Icon(

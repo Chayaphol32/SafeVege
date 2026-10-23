@@ -230,12 +230,102 @@ function admin_routes(PDO $db, string $method, array $p): bool {
         send_json(200, ['message' => 'Shop updated']);
     }
     if (count($p) === 3 && $p[1] === 'shops' && ctype_digit($p[2]) && $method === 'DELETE') {
-        $shopId = (int)$p[2]; find_row($db, 'SELECT id FROM api_shops WHERE id = ?', [$shopId]);
-        if (all_rows($db, 'SELECT id FROM api_inspection_requests WHERE shop_id = ? LIMIT 1', [$shopId])) throw new ApiError(409, 'Shop with inspection history cannot be deleted');
-        run_sql($db, 'DELETE FROM api_shops WHERE id = ?', [$shopId]);
-        audit($db, (int)$user['id'], 'shop', $shopId, 'deleted', []);
+        $shopId = (int)$p[2];
+        $shop = find_row($db, 'SELECT id, owner_user_id, name FROM api_shops WHERE id = ?', [$shopId]);
+        $requests = all_rows($db, 'SELECT id FROM api_inspection_requests WHERE shop_id = ?', [$shopId]);
+        $requestIds = array_column($requests, 'id');
+
+        if (!empty($requestIds)) {
+            if ($user['role'] !== 'super_admin') {
+                throw new ApiError(403, 'เฉพาะ Super Admin เท่านั้นที่สามารถลบร้านค้าที่มีประวัติการตรวจได้');
+            }
+
+            $inRequests = implode(',', array_map('intval', $requestIds));
+            $items = all_rows($db, "SELECT id FROM api_inspection_request_items WHERE request_id IN ($inRequests)");
+            $itemIds = array_column($items, 'id');
+
+            $resultIds = [];
+            if (!empty($itemIds)) {
+                $inItems = implode(',', array_map('intval', $itemIds));
+                $results = all_rows($db, "SELECT id FROM api_inspection_results WHERE request_item_id IN ($inItems)");
+                $resultIds = array_column($results, 'id');
+            }
+
+            $certs = all_rows($db, "SELECT id, file_path FROM api_certificates WHERE request_id IN ($inRequests)");
+            $certIds = array_column($certs, 'id');
+
+            $db->beginTransaction();
+            try {
+                if (!empty($certIds)) {
+                    $inCerts = implode(',', array_map('intval', $certIds));
+                    run_sql($db, "DELETE FROM api_certificate_results WHERE certificate_id IN ($inCerts)");
+                }
+                if (!empty($resultIds)) {
+                    $inResults = implode(',', array_map('intval', $resultIds));
+                    run_sql($db, "DELETE FROM api_certificate_results WHERE result_id IN ($inResults)");
+                }
+                if (!empty($certIds)) {
+                    run_sql($db, "DELETE FROM api_certificates WHERE request_id IN ($inRequests)");
+                    $directory = dirname(__DIR__, 2) . '/storage/certificates';
+                    foreach ($certs as $cert) {
+                        $fileName = $cert['file_path'] ?? '';
+                        if ($fileName && !str_starts_with($fileName, 'demo-')) {
+                            $filePath = $directory . '/' . $fileName;
+                            if (is_file($filePath)) {
+                                @unlink($filePath);
+                            }
+                        }
+                    }
+                }
+                if (!empty($itemIds)) {
+                    $inItems = implode(',', array_map('intval', $itemIds));
+                    run_sql($db, "DELETE FROM api_inspection_results WHERE request_item_id IN ($inItems)");
+                }
+                run_sql($db, "DELETE FROM api_inspection_appointments WHERE request_id IN ($inRequests)");
+                run_sql($db, "DELETE FROM api_inspection_request_items WHERE request_id IN ($inRequests)");
+                run_sql($db, "DELETE FROM api_inspection_requests WHERE shop_id = ?", [$shopId]);
+                run_sql($db, 'DELETE FROM api_shops WHERE id = ?', [$shopId]);
+
+                if (!empty($shop['owner_user_id'])) {
+                    $ownerId = (int)$shop['owner_user_id'];
+                    $otherShops = all_rows($db, 'SELECT id FROM api_shops WHERE owner_user_id = ? AND id != ? LIMIT 1', [$ownerId, $shopId]);
+                    if (empty($otherShops)) {
+                        run_sql($db, 'DELETE FROM api_api_tokens WHERE user_id = ?', [$ownerId]);
+                    }
+                }
+
+                audit($db, (int)$user['id'], 'shop', $shopId, 'deleted', [
+                    'name' => $shop['name'],
+                    'cascade_requests' => count($requestIds),
+                    'cascade_items' => count($itemIds),
+                    'cascade_certificates' => count($certIds),
+                ]);
+                $db->commit();
+            } catch (Throwable $error) {
+                if ($db->inTransaction()) $db->rollBack();
+                throw $error;
+            }
+        } else {
+            $db->beginTransaction();
+            try {
+                run_sql($db, 'DELETE FROM api_shops WHERE id = ?', [$shopId]);
+                if (!empty($shop['owner_user_id'])) {
+                    $ownerId = (int)$shop['owner_user_id'];
+                    $otherShops = all_rows($db, 'SELECT id FROM api_shops WHERE owner_user_id = ? AND id != ? LIMIT 1', [$ownerId, $shopId]);
+                    if (empty($otherShops)) {
+                        run_sql($db, 'DELETE FROM api_api_tokens WHERE user_id = ?', [$ownerId]);
+                    }
+                }
+                audit($db, (int)$user['id'], 'shop', $shopId, 'deleted', ['name' => $shop['name']]);
+                $db->commit();
+            } catch (Throwable $error) {
+                if ($db->inTransaction()) $db->rollBack();
+                throw $error;
+            }
+        }
         send_json(200, ['message' => 'Shop deleted']);
     }
+
     if (count($p) < 3 || $p[1] !== 'requests' || !ctype_digit($p[2])) return false;
     $requestId = (int)$p[2];
     $request = find_row($db, 'SELECT r.*, s.name AS shop_name FROM api_inspection_requests r JOIN api_shops s ON s.id = r.shop_id WHERE r.id = ?', [$requestId]);

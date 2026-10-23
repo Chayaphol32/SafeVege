@@ -28,7 +28,9 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   void initState() {
     super.initState();
     _selectedFilterTab = widget.initialFilterIndex;
-    widget.appState.loadMyRequests().catchError((Object _) {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.appState.loadMyRequests().catchError((Object _) {});
+    });
   }
 
   Future<void> _openRequest(InspectionRequestModel request) async {

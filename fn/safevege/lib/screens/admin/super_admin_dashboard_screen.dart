@@ -22,7 +22,6 @@ class SuperAdminDashboardScreen extends StatefulWidget {
   State<SuperAdminDashboardScreen> createState() =>
       _SuperAdminDashboardScreenState();
 }
-
 class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   bool _isRefreshing = false;
 
@@ -31,7 +30,9 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadInitialData();
+    });
   }
 
   Future<void> _loadInitialData() async {
@@ -74,118 +75,11 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   }
 
   Future<void> _showQuickCreateInspector() async {
-    final formKey = GlobalKey<FormState>();
-    final usernameController = TextEditingController();
-    final displayNameController = TextEditingController();
-    final passwordController = TextEditingController();
-
     final created = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryOf(ctx).withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person_add_rounded,
-                color: AppColors.primaryOf(ctx),
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'เพิ่มผู้ตรวจการผักใหม่',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Form(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'สร้างบัญชีเจ้าหน้าที่ระดับผู้ตรวจการ (Inspector Admin) สำหรับลงพื้นที่สุ่มตรวจแปลงและบันทึกผลแล็บ',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'ชื่อผู้ใช้ (Username)',
-                    prefixIcon: Icon(Icons.account_circle_outlined),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'กรุณากรอกชื่อผู้ใช้'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: displayNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'ชื่อ-นามสกุล ที่แสดง',
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'กรุณากรอกชื่อที่แสดง'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'รหัสผ่านเริ่มต้น',
-                    helperText: 'อย่างน้อย 12 ตัวอักษร',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  validator: (v) => v == null || v.length < 12
-                      ? 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร'
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton.icon(
-            onPressed: () async {
-              if (formKey.currentState?.validate() != true) return;
-              try {
-                await appState.createAdminUser(
-                  username: usernameController.text.trim(),
-                  displayName: displayNameController.text.trim(),
-                  password: passwordController.text,
-                  role: UserRole.admin,
-                );
-                if (ctx.mounted) Navigator.pop(ctx, true);
-              } catch (error) {
-                if (ctx.mounted) {
-                  AppFeedback.showError(ctx, error.toString());
-                }
-              }
-            },
-            icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('สร้างบัญชี'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (ctx) => _QuickCreateInspectorDialog(appState: appState),
     );
-
-    usernameController.dispose();
-    displayNameController.dispose();
-    passwordController.dispose();
 
     if (created == true && mounted) {
       AppFeedback.showSuccess(context, 'สร้างบัญชีผู้ตรวจการเรียบร้อยแล้ว');
@@ -1203,7 +1097,6 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     return Icons.history_rounded;
   }
 }
-
 class _ExecutiveModuleTile extends StatelessWidget {
   const _ExecutiveModuleTile({
     required this.icon,
@@ -1331,3 +1224,149 @@ class _ExecutiveModuleTile extends StatelessWidget {
     );
   }
 }
+class _QuickCreateInspectorDialog extends StatefulWidget {
+  const _QuickCreateInspectorDialog({required this.appState});
+
+  final AppState appState;
+
+  @override
+  State<_QuickCreateInspectorDialog> createState() =>
+      _QuickCreateInspectorDialogState();
+}
+
+class _QuickCreateInspectorDialogState
+    extends State<_QuickCreateInspectorDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _displayNameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.appState.createAdminUser(
+        username: _usernameController.text.trim(),
+        displayName: _displayNameController.text.trim(),
+        password: _passwordController.text,
+        role: UserRole.admin,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        AppFeedback.showError(
+          context,
+          AppState.localizeErrorMessage(
+            error.toString().replaceFirst('ApiException: ', ''),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryOf(context).withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_add_rounded,
+              color: AppColors.primaryOf(context),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'เพิ่มผู้ตรวจการผักใหม่',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'สร้างบัญชีเจ้าหน้าที่ระดับผู้ตรวจการ (Inspector Admin) สำหรับลงพื้นที่สุ่มตรวจแปลงและบันทึกผลแล็บ',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'ชื่อผู้ใช้ (Username)',
+                  prefixIcon: Icon(Icons.account_circle_outlined),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'กรุณากรอกชื่อผู้ใช้' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _displayNameController,
+                decoration: const InputDecoration(
+                  labelText: 'ชื่อ-นามสกุล ที่แสดง',
+                  prefixIcon: Icon(Icons.badge_outlined),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'กรุณากรอกชื่อที่แสดง' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'รหัสผ่านเริ่มต้น',
+                  helperText: 'อย่างน้อย 12 ตัวอักษร',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+                validator: (v) =>
+                    v == null || v.length < 12 ? 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context, false),
+          child: const Text('ยกเลิก'),
+        ),
+        FilledButton.icon(
+          onPressed: _isSubmitting ? null : _submit,
+          icon: _isSubmitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Icon(Icons.check_rounded, size: 18),
+          label: const Text('สร้างบัญชี'),
+        ),
+      ],
+    );
+  }
+}
+

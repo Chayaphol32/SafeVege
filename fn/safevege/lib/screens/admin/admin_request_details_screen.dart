@@ -34,7 +34,9 @@ class _AdminRequestDetailsScreenState extends State<AdminRequestDetailsScreen> {
   void initState() {
     super.initState();
     _request = widget.request;
-    _reloadRequest();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reloadRequest();
+    });
   }
 
   Future<void> _reloadRequest() async {

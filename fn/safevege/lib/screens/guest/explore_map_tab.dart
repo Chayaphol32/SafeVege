@@ -167,7 +167,6 @@ class _ExploreMapTabState extends State<ExploreMapTab> {
             // Full Screen Map
             Positioned.fill(
               child: SafeVegeInteractiveMap(
-                height: double.infinity,
                 isFullScreen: true,
                 shops: filteredShops,
                 selectedShop: _selectedShop,

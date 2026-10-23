@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/app_models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common_widgets.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key, required this.appState});
@@ -22,7 +23,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
   }
 
   Future<void> _load() async {
@@ -40,152 +43,56 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Future<void> _createInspector() async {
-    final values = await _showCreateDialog();
-    if (values == null || !mounted) return;
-    try {
-      await appState.createAdminUser(
-        username: values.username,
-        displayName: values.displayName,
-        password: values.password,
-        role: UserRole.admin,
-      );
-      if (mounted) _showMessage('สร้างบัญชีแอดมินตรวจผักแล้ว');
-    } catch (error) {
-      if (mounted) _showMessage(_errorText(error), isError: true);
+    final success = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _CreateAdminUserDialog(appState: appState),
+    );
+    if (success == true && mounted) {
+      AppFeedback.showSuccess(context, 'สร้างบัญชีแอดมินตรวจผักเรียบร้อยแล้ว');
+      _load();
     }
   }
 
   Future<void> _resetPassword(AdminUserModel user) async {
-    final password = await _showPasswordDialog(user);
-    if (password == null || !mounted) return;
-    try {
-      await appState.resetAdminUserPassword(user.id, password);
-      if (mounted) _showMessage('เปลี่ยนรหัสผ่านให้ ${user.username} แล้ว');
-    } catch (error) {
-      if (mounted) _showMessage(_errorText(error), isError: true);
+    final success = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _ResetUserPasswordDialog(
+        user: user,
+        appState: appState,
+      ),
+    );
+    if (success == true && mounted) {
+      AppFeedback.showSuccess(
+        context,
+        'เปลี่ยนรหัสผ่านให้ ${user.username} สำเร็จแล้ว',
+      );
+      _load();
     }
   }
 
+  String? _updatingUserId;
+
   Future<void> _toggleActive(AdminUserModel user, bool isActive) async {
+    setState(() => _updatingUserId = user.id);
     try {
       await appState.updateAdminUser(user.id, isActive: isActive);
       if (mounted) {
-        _showMessage(isActive ? 'เปิดใช้งานบัญชีแล้ว' : 'ปิดใช้งานบัญชีแล้ว');
+        AppFeedback.showSuccess(
+          context,
+          isActive ? 'เปิดใช้งานบัญชีแล้ว' : 'ปิดใช้งานบัญชีแล้ว',
+        );
       }
     } catch (error) {
-      if (mounted) _showMessage(_errorText(error), isError: true);
+      if (mounted) {
+        AppFeedback.showError(context, _errorText(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _updatingUserId = null);
+      }
     }
-  }
-
-  Future<_CreateUserValues?> _showCreateDialog() {
-    final formKey = GlobalKey<FormState>();
-    final username = TextEditingController();
-    final displayName = TextEditingController();
-    final password = TextEditingController();
-
-    return showDialog<_CreateUserValues>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('สร้างแอดมินตรวจผัก'),
-        content: Form(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: username,
-                  decoration: const InputDecoration(labelText: 'ชื่อผู้ใช้'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'กรอกชื่อผู้ใช้'
-                      : null,
-                ),
-                TextFormField(
-                  controller: displayName,
-                  decoration: const InputDecoration(labelText: 'ชื่อที่แสดง'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'กรอกชื่อที่แสดง'
-                      : null,
-                ),
-                TextFormField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'รหัสผ่านเริ่มต้น',
-                    helperText: 'อย่างน้อย 12 ตัวอักษร',
-                  ),
-                  validator: (value) => value == null || value.length < 12
-                      ? 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร'
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.pop(
-                dialogContext,
-                _CreateUserValues(
-                  username: username.text.trim(),
-                  displayName: displayName.text.trim(),
-                  password: password.text,
-                ),
-              );
-            },
-            child: const Text('สร้างบัญชี'),
-          ),
-        ],
-      ),
-    ).whenComplete(() {
-      username.dispose();
-      displayName.dispose();
-      password.dispose();
-    });
-  }
-
-  Future<String?> _showPasswordDialog(AdminUserModel user) {
-    final formKey = GlobalKey<FormState>();
-    final password = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('เปลี่ยนรหัสผ่าน ${user.username}'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: password,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'รหัสผ่านใหม่',
-              helperText: 'อย่างน้อย 12 ตัวอักษร',
-            ),
-            validator: (value) => value == null || value.length < 12
-                ? 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร'
-                : null,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.pop(dialogContext, password.text);
-            },
-            child: const Text('บันทึก'),
-          ),
-        ],
-      ),
-    ).whenComplete(password.dispose);
   }
 
   @override
@@ -197,27 +104,32 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundOf(context),
-      appBar: AppBar(
-        title: const Text(
-          'จัดการบัญชีผู้ใช้',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'รีเฟรช',
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundOf(context),
+          appBar: AppBar(
+            title: const Text(
+              'จัดการบัญชีผู้ใช้',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              IconButton(
+                tooltip: 'รีเฟรช',
+                onPressed: _loading ? null : _load,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _loading ? null : _createInspector,
-        icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('สร้างแอดมินตรวจผัก'),
-      ),
-      body: _buildBody(),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _loading ? null : _createInspector,
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            label: const Text('สร้างแอดมินตรวจผัก'),
+          ),
+          body: _buildBody(),
+        );
+      },
     );
   }
 
@@ -244,6 +156,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final user = appState.adminUsers[index];
+          final isCurrentUser = user.username == appState.username;
+
           return Card(
             child: ListTile(
               leading: CircleAvatar(
@@ -266,18 +180,27 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      tooltip: 'เปลี่ยนรหัสผ่าน',
-                      onPressed: user.username == appState.username
-                          ? null
-                          : () => _resetPassword(user),
+                      tooltip: isCurrentUser
+                          ? 'ไม่สามารถเปลี่ยนรหัสผ่านตนเองที่นี่'
+                          : 'เปลี่ยนรหัสผ่าน',
+                      onPressed: isCurrentUser ? null : () => _resetPassword(user),
                       icon: const Icon(Icons.key_rounded),
                     ),
-                    Switch(
-                      value: user.isActive,
-                      onChanged: user.username == appState.username
-                          ? null
-                          : (value) => _toggleActive(user, value),
-                    ),
+                    if (_updatingUserId == user.id)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else
+                      Switch(
+                        value: user.isActive,
+                        onChanged: isCurrentUser || _updatingUserId != null
+                            ? null
+                            : (value) => _toggleActive(user, value),
+                      ),
                   ],
                 ),
               ),
@@ -288,19 +211,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? AppColors.danger : AppColors.success,
-        ),
-      );
-  }
-
   static String _errorText(Object error) =>
-      error.toString().replaceFirst('ApiException: ', '');
+      AppState.localizeErrorMessage(error.toString().replaceFirst('ApiException: ', ''));
 
   static String _roleLabel(UserRole role) => switch (role) {
     UserRole.shop => 'ร้านค้า',
@@ -317,14 +229,496 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   };
 }
 
-class _CreateUserValues {
-  const _CreateUserValues({
-    required this.username,
-    required this.displayName,
-    required this.password,
+/// Dialog for changing a user's password with username confirmation
+class _ResetUserPasswordDialog extends StatefulWidget {
+  const _ResetUserPasswordDialog({
+    required this.user,
+    required this.appState,
   });
 
-  final String username;
-  final String displayName;
-  final String password;
+  final AdminUserModel user;
+  final AppState appState;
+
+  @override
+  State<_ResetUserPasswordDialog> createState() =>
+      _ResetUserPasswordDialogState();
+}
+
+class _ResetUserPasswordDialogState extends State<_ResetUserPasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _confirmUsernameController = TextEditingController();
+
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _confirmUsernameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await widget.appState.resetAdminUserPassword(
+        widget.user.id,
+        _newPasswordController.text,
+      );
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = AppState.localizeErrorMessage(
+            error.toString().replaceFirst('ApiException: ', ''),
+          );
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.user;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryOf(context).withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.key_rounded,
+              color: AppColors.primaryOf(context),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'เปลี่ยนรหัสผ่าน ${user.username}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ),
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Info Box
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceOf(context),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.borderOf(context),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'กำลังเปลี่ยนรหัสผ่านให้: ${user.username}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (user.displayName.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'ชื่อที่แสดง: ${user.displayName}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondaryOf(context),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                if (_errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.danger.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.danger,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.danger,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
+                // New Password
+                TextFormField(
+                  controller: _newPasswordController,
+                  obscureText: _obscureNewPassword,
+                  decoration: InputDecoration(
+                    labelText: 'รหัสผ่านใหม่',
+                    helperText: 'ต้องมีความยาวอย่างน้อย 12 ตัวอักษร',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureNewPassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(
+                        () => _obscureNewPassword = !_obscureNewPassword,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'กรุณากรอกรหัสผ่านใหม่';
+                    }
+                    if (value.length < 12) {
+                      return 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // Confirm Password
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'ยืนยันรหัสผ่านใหม่อีกครั้ง',
+                    prefixIcon: const Icon(Icons.lock_reset_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(
+                        () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'กรุณายืนยันรหัสผ่านใหม่';
+                    }
+                    if (value != _newPasswordController.text) {
+                      return 'รหัสผ่านทั้งสองช่องไม่ตรงกัน';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Confirm Username Section (Required by User: "ทำยืนยันอีกรอบด้วยการใส่ชื่อuser อีกรอบ")
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningBgOf(context),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.warning.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.shield_outlined,
+                        size: 18,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'เพื่อยืนยัน กรุณาพิมพ์ชื่อผู้ใช้ "${user.username}" อีกครั้ง',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.isDark(context)
+                                ? const Color(0xFFFDE68A)
+                                : const Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                TextFormField(
+                  controller: _confirmUsernameController,
+                  decoration: InputDecoration(
+                    labelText: 'พิมพ์ชื่อผู้ใช้ (${user.username}) เพื่อยืนยัน',
+                    hintText: user.username,
+                    prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'กรุณาพิมพ์ชื่อผู้ใช้ "${user.username}" เพื่อยืนยัน';
+                    }
+                    if (value.trim() != user.username) {
+                      return 'ชื่อผู้ใช้ไม่ตรงกัน กรุณาพิมพ์ "${user.username}"';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context, false),
+          child: const Text('ยกเลิก'),
+        ),
+        FilledButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('ยืนยันเปลี่ยนรหัสผ่าน'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog for creating inspector admin
+class _CreateAdminUserDialog extends StatefulWidget {
+  const _CreateAdminUserDialog({required this.appState});
+
+  final AppState appState;
+
+  @override
+  State<_CreateAdminUserDialog> createState() => _CreateAdminUserDialogState();
+}
+
+class _CreateAdminUserDialogState extends State<_CreateAdminUserDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _displayNameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await widget.appState.createAdminUser(
+        username: _usernameController.text.trim(),
+        displayName: _displayNameController.text.trim(),
+        password: _passwordController.text,
+        role: UserRole.admin,
+      );
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = AppState.localizeErrorMessage(
+            error.toString().replaceFirst('ApiException: ', ''),
+          );
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(
+        children: [
+          Icon(Icons.person_add_alt_1_rounded, size: 24),
+          SizedBox(width: 10),
+          Text(
+            'สร้างแอดมินตรวจผัก',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.danger.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(labelText: 'ชื่อผู้ใช้ (Username)'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'กรุณากรอกชื่อผู้ใช้'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _displayNameController,
+                  decoration: const InputDecoration(labelText: 'ชื่อที่แสดง (Display Name)'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'กรุณากรอกชื่อที่แสดง'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'รหัสผ่านเริ่มต้น',
+                    helperText: 'อย่างน้อย 12 ตัวอักษร',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword,
+                      ),
+                    ),
+                  ),
+                  validator: (value) => value == null || value.length < 12
+                      ? 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร'
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context, false),
+          child: const Text('ยกเลิก'),
+        ),
+        FilledButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('สร้างบัญชี'),
+        ),
+      ],
+    );
+  }
 }

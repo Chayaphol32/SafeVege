@@ -192,7 +192,14 @@ class _AdminShopDetailsScreenState extends State<AdminShopDetailsScreen> {
         AppFeedback.showSuccess(context, 'บันทึกการแก้ไขร้านค้าเรียบร้อยแล้ว');
       }
     } catch (error) {
-      if (mounted) AppFeedback.showError(context, error.toString());
+      if (mounted) {
+        AppFeedback.showError(
+          context,
+          AppState.localizeErrorMessage(
+            error.toString().replaceFirst('ApiException: ', ''),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -214,7 +221,14 @@ class _AdminShopDetailsScreenState extends State<AdminShopDetailsScreen> {
         AppFeedback.showSuccess(context, 'ลบร้านค้าออกจากระบบแล้ว');
         Navigator.pop(context, true);
       } catch (error) {
-        if (mounted) AppFeedback.showError(context, error.toString());
+        if (mounted) {
+          AppFeedback.showError(
+            context,
+            AppState.localizeErrorMessage(
+              error.toString().replaceFirst('ApiException: ', ''),
+            ),
+          );
+        }
       }
     }
   }

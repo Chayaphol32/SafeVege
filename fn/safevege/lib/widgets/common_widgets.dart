@@ -559,6 +559,69 @@ class AppFeedback {
       ),
     );
   }
+
+  static Future<void> showErrorDialog(
+    BuildContext context, {
+    String title = 'แจ้งเตือน',
+    required String message,
+    String buttonText = 'ตกลง',
+  }) {
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surfaceOf(ctx),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.danger,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            fontSize: 14.5,
+            color: AppColors.textSecondaryOf(ctx),
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(buttonText),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class SectionHeader extends StatelessWidget {
